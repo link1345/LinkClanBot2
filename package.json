@@ -1,0 +1,25 @@
+{
+  "name": "linkclanbot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node .",
+    "watch": "tsc --watch"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@discordjs/rest": "^0.1.0-canary.0",
+    "@discordjs/voice": "^0.6.0",
+    "@types/node": "^16.7.5",
+    "discord-api-types": "^0.22.0",
+    "discord.js": "^13.1.0",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^4.4.2"
+  }
+}
