@@ -9,7 +9,9 @@
 		]
 	},
 		"include": [
-		"app/*"
+		"app/*",	
+		"app/*/*",
+		"app/*/*/*",		
 	],
 	"exclude": [
 		"node_modules"
