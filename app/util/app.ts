@@ -32,10 +32,11 @@ export class AppManager {
 
 		this.client = new  Client({ intents: [ 
 			Intents.FLAGS.GUILDS,
-			 Intents.FLAGS.GUILD_PRESENCES,  
-			 Intents.FLAGS.GUILD_MEMBERS, 
-			 Intents.FLAGS.GUILD_MESSAGES,
-			] });
+			Intents.FLAGS.GUILD_PRESENCES,  
+			Intents.FLAGS.GUILD_MEMBERS, 
+			Intents.FLAGS.GUILD_MESSAGES,
+			Intents.FLAGS.GUILD_VOICE_STATES,
+		] });
 
 		this.moduleList = [];
 	}
@@ -112,7 +113,7 @@ export class AppManager {
 					//console.log( "Event:" ,  eventName , ", Name:" , obj_key);
 
 					try {
-						await item["object"][obj_key]["obj"][eventName](client, item, data);
+						await item["object"][obj_key]["obj"][eventName](client, item["config"], ...data);
 					}catch(error) {
 						if (error instanceof TypeError){
 							// 関数がない場合の処理
@@ -132,9 +133,11 @@ export class AppManager {
 		// ------------------------------------------------------------------------------
 
 		const eventRun = async<T extends readonly any[]>( eventName:string, data:[...T]) => {
-			this.client.on(eventName, async data => {
+			const _e = async<T extends readonly any[]> (...data:[...T]) => {
 				await run_func( eventName, this.moduleList , this.client , data);
-			});
+			}
+		
+			this.client.on(eventName, _e );
 		}
 		
 		//console.log( EventList ) ;
