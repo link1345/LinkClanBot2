@@ -1,8 +1,6 @@
-
-const { REST } = require('@discordjs/rest');
-const { Routes } = require('discord-api-types/v9');
-
-const { Client, Intents } = require('discord.js');
+import {REST} from '@discordjs/rest';
+import {Routes} from 'discord-api-types/v9';
+import * as Discord from 'discord.js';
 
 export class main  {
 	constructor(){

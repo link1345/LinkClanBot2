@@ -1,20 +1,21 @@
-import { copyFileSync } from "fs";
+//import { copyFileSync } from "fs";
+//import { eventNames } from "process";
 
+import {REST} from '@discordjs/rest';
+import {Routes} from 'discord-api-types/v9';
 
-const EventEmitter = require('events').EventEmitter;
+//const { Client, Intents, Interaction } = require('discord.js');
+import {Client, Intents} from 'discord.js';
 
-const { REST } = require('@discordjs/rest');
-const { Routes } = require('discord-api-types/v9');
+import * as yaml from 'js-yaml';
+import * as fs from 'fs';
 
-const { Client, Intents } = require('discord.js');
-
-const yaml = require('js-yaml');
-const fs   = require('fs');
+import {EventList} from './event';
 
 export class AppManager {
-	client: typeof Client;
+	client: Client;
 
-	rest: typeof REST;
+	rest: REST;
 
 	base_doc: Object;
 	slashCommands: Array<Object>;
@@ -29,15 +30,19 @@ export class AppManager {
 		
 		this.rest = new REST({ version: '9' }).setToken(this.base_doc["TOKEN"]);
 
-		this.client = new Client({ intents: [Intents.FLAGS.GUILDS] });
+		this.client = new  Client({ intents: [ 
+			Intents.FLAGS.GUILDS,
+			 Intents.FLAGS.GUILD_PRESENCES,  
+			 Intents.FLAGS.GUILD_MEMBERS, 
+			 Intents.FLAGS.GUILD_MESSAGES,
+			] });
 
 		this.moduleList = [];
 	}
 
-	async Oneload(path: String){
+	async Oneload(path: string){
 
 		const files = await fs.promises.readdir(path);
-		 
 
 		var pluginData = {};
 		//console.log(files)
@@ -97,12 +102,15 @@ export class AppManager {
 		}
 	}
 
-	async run(){
+	run(){
 
-		const run_func = async<T extends readonly any[]>( eventName:string,module: Object[], client, data:[...T] ) => {
+		const run_func = async<T extends readonly any[]>( eventName:string, module: Object[], client: Client, data:[...T] ) => {
 			for(let item of module){
 				
 				for( let obj_key of Object.keys( item["object"] ) ){
+
+					//console.log( "Event:" ,  eventName , ", Name:" , obj_key);
+
 					try {
 						await item["object"][obj_key]["obj"][eventName](client, item, data);
 					}catch(error) {
@@ -117,19 +125,41 @@ export class AppManager {
 			}
 		}
 		
-		this.client.on('ready', async client => {
-			console.log(`Logged in as ${this.client.user.tag}!`);
-			//console.log( this.moduleList )
-			await run_func( "ready", this.moduleList , this.client , client);
-		});
+
+		// ------------------------------------------------------------------------------
+		// -----  EVENT  ----------------------------------------------------------------
+		// ---------- https://discord.js.org/#/docs/main/stable/class/Client ------------
+		// ------------------------------------------------------------------------------
+
+		const eventRun = async<T extends readonly any[]>( eventName:string, data:[...T]) => {
+			this.client.on(eventName, async data => {
+				await run_func( eventName, this.moduleList , this.client , data);
+			});
+		}
 		
-		this.client.on('interactionCreate', async interaction => {
-			//console.log("id : " , interaction.commandId )
-
-			await run_func( "interactionCreate", this.moduleList , this.client , interaction);
-
-		});		
-
+		//console.log( EventList ) ;
+		
+		for( let obj_key of Object.keys( EventList ) ){
+			var eventitem = [];
+			for( let item in EventList[obj_key] ){
+				if( item == "Date" ){
+					eventitem.push( Date );
+	
+				}else if( item == "string" ){
+					eventitem.push( NaN );
+	
+				}else if( item == "any" ){
+					eventitem.push( NaN );
+	
+				}else{
+					eventitem.push( require('discord.js')[EventList[obj_key][item]] );
+					//console.log( EventList[obj_key] );
+				}	
+			}
+			//console.log(obj_key , " => " , eventitem );
+			eventRun(obj_key ,  eventitem );
+		}
+		
 		this.client.login( this.base_doc["TOKEN"] );
 	}
 }
