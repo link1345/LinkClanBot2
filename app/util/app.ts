@@ -22,11 +22,11 @@ export class AppManager {
 
 	moduleList: Array<Object>;
 
-	constructor(targetDirectory) {
+	constructor() {
 
 		this.base_doc = yaml.load(fs.readFileSync('./config/base.yml', 'utf8'));
 
-		this.slashCommands = [];
+		//this.slashCommands = [];
 		
 		this.rest = new REST({ version: '9' }).setToken(this.base_doc["TOKEN"]);
 
@@ -57,24 +57,25 @@ export class AppManager {
 			// モジュール作業
 			if ( "module" in pluginItemData["config"] && "plugin_folder" in pluginItemData["config"] ) {
 				// hit!
-				pluginItemData["config"]["module"].forEach(function(item, index, array) {
+				for( var item of pluginItemData["config"]["module"] ) {
 					var func_text : string = __dirname + "/../plugin/" + pluginItemData["config"]["plugin_folder"] + "/" + item ;
 					//console.log("func path: " , func_text)
 					pluginItemData["object"][func_text] = {}
 					pluginItemData["object"][func_text]["func"] = require(func_text)["main"];
 					//console.log("func: " , pluginItemData["object"][func_text] );
-					pluginItemData["object"][func_text]["obj"] =  new pluginItemData["object"][func_text]["func"]() ;
-				});
+					pluginItemData["object"][func_text]["obj"] =  new pluginItemData["object"][func_text]["func"](this.client, pluginItemData["config"], this.base_doc, this.rest) ;
+				}
 			}
 
 			if( Object.keys(pluginItemData["object"]).length != 0 ){
 				this.moduleList.push( pluginItemData );
 			}
 
-			// ついでに、slashCommandも観ておく
-			if ( "slashCommand" in pluginItemData["config"] ){
-				this.slashCommands = this.slashCommands.concat( pluginItemData["config"]["slashCommand"] );
-			}
+			// ------- やらない ------------
+			//  ~~ ついでに、slashCommandも観ておく ~~
+			//if ( "slashCommand" in pluginItemData["config"] ){
+			//	this.slashCommands = this.slashCommands.concat( pluginItemData["config"]["slashCommand"] );
+			//}
 		});
 		
 		//console.log(this.moduleList)
@@ -87,7 +88,8 @@ export class AppManager {
 		//console.log( "load : ", this.moduleList );
 	}
 
-
+/*
+// ここではやらない
 	async init_SlashCommands(){
 		try {
 			console.log('Started refreshing application (/) commands.');
@@ -102,30 +104,31 @@ export class AppManager {
 			console.error(error);
 		}
 	}
+*/
 
-	run(){
 
-		const run_func = async<T extends readonly any[]>( eventName:string, module: Object[], client: Client, data:[...T] ) => {
-			for(let item of module){
-				
-				for( let obj_key of Object.keys( item["object"] ) ){
+	run_func = async<T extends readonly any[]>( eventName:string, module: Object[], client: Client, data:[...T] ) => {
+		for(let item of module){
+			
+			for( let obj_key of Object.keys( item["object"] ) ){
 
-					//console.log( "Event:" ,  eventName , ", Name:" , obj_key);
+				//console.log( "Event:" ,  eventName , ", Name:" , obj_key);
 
-					try {
-						await item["object"][obj_key]["obj"][eventName](client, item["config"], ...data);
-					}catch(error) {
-						if (error instanceof TypeError){
-							// 関数がない場合の処理
-							//console.log( "TypeError  Event:" ,  eventName , ", Name:" , obj_key);
-						}else{				
-							console.log(error);
-						}
+				try {
+					await item["object"][obj_key]["obj"][eventName](client, item["config"], ...data);
+				}catch(error) {
+					if (error instanceof TypeError){
+						// 関数がない場合の処理
+						//console.log( "TypeError  Event:" ,  eventName , ", Name:" , obj_key);
+					}else{				
+						console.log(error);
 					}
 				}
 			}
 		}
-		
+	}
+
+	run(){
 
 		// ------------------------------------------------------------------------------
 		// -----  EVENT  ----------------------------------------------------------------
@@ -134,7 +137,7 @@ export class AppManager {
 
 		const eventRun = async<T extends readonly any[]>( eventName:string, data:[...T]) => {
 			const _e = async<T extends readonly any[]> (...data:[...T]) => {
-				await run_func( eventName, this.moduleList , this.client , data);
+				await this.run_func( eventName, this.moduleList , this.client , data);
 			}
 		
 			this.client.on(eventName, _e );
@@ -164,5 +167,15 @@ export class AppManager {
 		}
 		
 		this.client.login( this.base_doc["TOKEN"] );
+	}
+
+	async exit(){
+		// 各プラグインで、終了処理を行うように指令を出す。
+		await this.run_func( "exit", this.moduleList , this.client , []); 
+		// Botログアウト
+		this.client.destroy();
+		
+		console.log(" ---------- ボット終了するぜー！ ----------");
+		process.exit(0);
 	}
 }

@@ -1,18 +1,15 @@
-
-const {AppManager} = require('./util/app');
+import {AppManager} from './util/app';
 
 var app = new AppManager();
 
 async function app_run(){
 	await app.load();
-	await app.init_SlashCommands();
+	//await app.init_SlashCommands();  //やらない
 	app.run();
 }
 
-process.on("exit", exitCode => {
-	app.client.destroy();
-	console.log(" ---------- ボット終了するぜー！ ----------");
+process.on("SIGINT", ()=>{
+	app.exit();	
 });
-process.on("SIGINT", ()=>process.exit(0));
 
 app_run().then();
