@@ -2,26 +2,32 @@ import {REST} from '@discordjs/rest';
 import {Routes} from 'discord-api-types/v9';
 import * as Discord from 'discord.js';
 
+import * as path from 'path';
+
 import * as cron from 'node-cron';
 import * as yaml from 'js-yaml';
-import internal = require('stream');
 
 import * as fs from 'fs';
 
+import {PluginBase} from '../../util/plugin_base';
 
-export class main  {
-	constructor(){
-		
-		cron.schedule('0 0 0 1 * *', () => console.log('毎月定期実行の月初めだよ！'));
+export class main extends PluginBase {
+
+	constructor(fix_client: Discord.Client, config: Object, base_doc:Object, rest:REST){
+		super(fix_client, config, base_doc, rest, path.basename(path.dirname(__filename)) );
+
+		cron.schedule('0 0 0 1 * *', () => this.periodic_output());
 		cron.schedule('0 0 * * * *', () => console.log('test minute0 -----------'));
-		cron.schedule('0 * * * * *', () => console.log('test second0 '));
+		cron.schedule('0 * * * * *', () => this.periodic_output());
 
 	}
 
-	//async ready(client_init: Discord.Client, config: Object, client: Discord.Client){
-	//	console.log(config);
-	//	console.log("run auto!");
-	//}
+	async periodic_output(){
+		console.log( "Bot Name :" , this.fix_client.user.username );
+
+
+		this.fix_client.guilds.cache
+	}
 
 	async voiceStateUpdate(client_init: Discord.Client, config: Object, oldState:Discord.VoiceState, newState:Discord.VoiceState){
 
