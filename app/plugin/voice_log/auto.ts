@@ -11,6 +11,8 @@ import * as fs from 'fs';
 
 import {PluginBase} from '../../util/plugin_base';
 
+import * as chart from './chart';
+
 export class main extends PluginBase {
 
 	constructor(fix_client: Discord.Client, config: Object, base_doc:Object, rest:REST){
@@ -22,11 +24,32 @@ export class main extends PluginBase {
 
 	}
 
+	// 定期でログを出力する。
 	async periodic_output(){
-		console.log( "Bot Name :" , this.fix_client.user.username );
+		//console.log( "Bot Name :" , this.fix_client.user.username );
+		
+		var move_day = new Date;
+		move_day.setMonth( move_day.getMonth() - 1 );
+
+		var year  = move_day.getFullYear();
+		var month = ("0"+ Number(move_day.getMonth() + 1) ).slice(-2);
+
+		var movefileName = this.config["output_TimeLine_folderpath"] + year.toString() + month.toString() + ".yml" ;
+		
+		try {
+			//await fs.promises.rename( this.config["output_TimeLine_filepath"], movefileName );
 
 
-		this.fix_client.guilds.cache
+			var output_data = await chart.MakeTimeList(this.fix_client, movefileName,this.config["Periodic_output_Role"]); // こっちが本番
+			//await chart.MakeTimeList(this.fix_client, movefileName,this.config["Periodic_output_Role"]);
+
+
+
+			console.log("OK");
+		}catch(error){
+			console.log("error");
+			console.log(error);
+		}
 	}
 
 	async voiceStateUpdate(client_init: Discord.Client, config: Object, oldState:Discord.VoiceState, newState:Discord.VoiceState){
@@ -41,7 +64,7 @@ export class main extends PluginBase {
 			var sec   = ("0"+d.getSeconds() ).slice(-2);
 			
 			text["time"] =  year + '/' + month + '/' + day + ' ' + hour + ':' + min + ':' + sec ;
-			text["timestanp"] = Date.now();
+			text["timestanp"] = String(Date.now());
 
 			//console.log(  yaml.dump([text]) ) ;
 			
