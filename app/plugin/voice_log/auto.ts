@@ -8,10 +8,11 @@ import * as cron from 'node-cron';
 import * as yaml from 'js-yaml';
 
 import * as fs from 'fs';
+import * as dfd from 'danfojs-node';
 
 import {PluginBase} from '../../util/plugin_base';
-
 import * as chart from './chart';
+
 
 export class main extends PluginBase {
 
@@ -19,8 +20,8 @@ export class main extends PluginBase {
 		super(fix_client, config, base_doc, rest, path.basename(path.dirname(__filename)) );
 
 		cron.schedule('0 0 0 1 * *', () => this.periodic_output());
-		cron.schedule('0 0 * * * *', () => console.log('test minute0 -----------'));
-		cron.schedule('0 * * * * *', () => this.periodic_output());
+		//cron.schedule('0 0 * * * *', () => console.log('test minute0 -----------'));
+		//cron.schedule('0 * * * * *', () => console.log('test sec0 --------------'));
 
 	}
 
@@ -37,13 +38,12 @@ export class main extends PluginBase {
 		var movefileName = this.config["output_TimeLine_folderpath"] + year.toString() + month.toString() + ".yml" ;
 		
 		try {
-			//await fs.promises.rename( this.config["output_TimeLine_filepath"], movefileName );
+			await fs.promises.rename( this.config["output_TimeLine_filepath"], movefileName ); // 本番はこれ動かす。
 
-
-			var output_data = await chart.MakeTimeList(this.fix_client, movefileName,this.config["Periodic_output_Role"]); // こっちが本番
-			//await chart.MakeTimeList(this.fix_client, movefileName,this.config["Periodic_output_Role"]);
-
-
+			var output_data : dfd.DataFrame = await chart.MakeTimeList(this.fix_client, movefileName,this.config["Periodic_output_Role"]); 
+			var profileName = this.config["processed_output_TimeLine_folderpath"] + year.toString() + month.toString() + ".csv" ;
+			
+			await output_data.to_csv(profileName);
 
 			console.log("OK");
 		}catch(error){
@@ -67,9 +67,8 @@ export class main extends PluginBase {
 			text["timestanp"] = String(Date.now());
 
 			//console.log(  yaml.dump([text]) ) ;
-			
-			fs.appendFile(config["output_TimeLine_filepath"], yaml.dump([text]), (err) => {
-			  if (err) throw err;			  
+			try{
+				await fs.promises.appendFile(config["output_TimeLine_filepath"], yaml.dump([text]));  
 				if (  text["flag"] == "entry" ){
 					console.log("【自動：" , text["time"] , "】" , text["member.name"], "さんが、" , text["after.channel.name"], "に入室しました。" );
 				}else if (  text["flag"] == "exit" ){
@@ -77,7 +76,10 @@ export class main extends PluginBase {
 				}else if (  text["flag"] == "move" ){
 					console.log("【自動：" , text["time"] , "】" , text["member.name"], "さんが、" , text["after.channel.name"], "から" , text["before.channel.name"], "へ移動しました。" );
 				}
-			});
+			}catch(error){
+				console.log("ログを出力できませんでした。");
+				console.log(error);
+			}
 			
 
 		}
