@@ -8,6 +8,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 
 export class PluginBase {
 	static classList: Object = {};
+	classID : Number ;
 
 	fix_client: Discord.Client; // できるだけ使わない方がいい。というか普通動かん。
 	config: Object;
@@ -15,7 +16,7 @@ export class PluginBase {
 	rest: REST;
 
 	// slashコマンド登録後のリターンログ
-	settingReturn_SlashCommands: Object;
+	settingReturn_SlashCommands:  Object;
 
 	constructor(fix_client: Discord.Client, config: Object, base_doc:Object, rest:REST , className:string ){
 		this.fix_client = fix_client;
@@ -23,13 +24,15 @@ export class PluginBase {
 		this.base_doc = base_doc;
 		this.rest = rest;
 
-		this.settingReturn_SlashCommands = {};
+		this.settingReturn_SlashCommands = [];
 	
 		this.init_SlashCommands(className);
 	}
 
 	async ready(fix_client: Discord.Client, config: Object){
 		//console.log("ready PluginBase!");
+
+		this.init_PermissionSlashCommands();
 	}
 
 	async exit(fix_client: Discord.Client, config: Object){
@@ -54,8 +57,9 @@ export class PluginBase {
 		}else{
 			PluginBase.classList[className] = 0;
 		}
+		this.classID = PluginBase.classList[className];
 		//console.log(PluginBase.classList , className in PluginBase.classList );
-		if ( !(this.config["slashCommand"] != null && PluginBase.classList[className] == 0) ){
+		if ( !(this.config["slashCommand"] != null && this.classID == 0) ){
 			return ;
 		}
 
@@ -75,6 +79,49 @@ export class PluginBase {
 		} catch (error) {
 			console.error(error);
 		}
+
+	}
+
+	private async init_PermissionSlashCommands(){
+		
+		if ( this.classID != 0 ){
+			return ;
+		}
+
+		this.fix_client.guilds.fetch();
+		var guild_list = this.fix_client.guilds.cache.map(guild => guild);
+		for( var guild_item in guild_list ){
+					
+			for( var t_permission in this.config["slashCommand_permissions"] ) {
+				for( var setting in this.settingReturn_SlashCommands ){
+					
+					
+					console.log(this.settingReturn_SlashCommands[setting]);
+
+					if( this.config["slashCommand_permissions"][t_permission]['name'] == this.settingReturn_SlashCommands[setting]['name'] ){
+						var obj : Array<Discord.ApplicationCommandPermissionData> = [];
+						for( var item of this.config["slashCommand_permissions"][t_permission]['option'] ) {
+							//console.log(item);
+							obj.push( item );
+						}
+			
+						if ( obj != [] ){
+							const per = {
+								"command" : this.settingReturn_SlashCommands[setting]['id'] , 
+								"permissions" : obj
+
+							}
+							//console.log(per);
+							guild_list[guild_item].commands.permissions.add(per);
+						}
+					}
+				}
+			}
+
+			
+
+		}
+
 	}
 
 }
