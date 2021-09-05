@@ -8,6 +8,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 
 export class PluginBase {
 	static classList: Object = {};
+	static commandList: Array<Object> = [];
 	classID : Number ;
 
 	fix_client: Discord.Client; // できるだけ使わない方がいい。というか普通動かん。
@@ -64,18 +65,20 @@ export class PluginBase {
 		}
 
 		try {
-			console.log('Started refreshing application (/) commands.');
+			//console.log('Started refreshing application (/) commands.');
 
-			console.log( "   Set Command => " , this.config["slashCommand"] );
+			//console.log( "   Set Command => " , this.config["slashCommand"] );
 			
 			this.settingReturn_SlashCommands = await this.rest.put(
 				Routes.applicationGuildCommands(this.base_doc["CLIENT_ID"], this.base_doc["GUILD_ID"]),
 				{ body: this.config["slashCommand"] },
 			);	
 
-			console.log("return => " , this.settingReturn_SlashCommands);
+			PluginBase.commandList = PluginBase.commandList.concat( this.settingReturn_SlashCommands );
+
+			//console.log("return => " , this.settingReturn_SlashCommands);
 			
-			console.log('Successfully reloaded application (/) commands.');
+			//console.log('Successfully reloaded application (/) commands.');
 		} catch (error) {
 			console.error(error);
 		}
@@ -96,7 +99,7 @@ export class PluginBase {
 				for( var setting in this.settingReturn_SlashCommands ){
 					
 					
-					console.log(this.settingReturn_SlashCommands[setting]);
+					//console.log(this.settingReturn_SlashCommands[setting]);
 
 					if( this.config["slashCommand_permissions"][t_permission]['name'] == this.settingReturn_SlashCommands[setting]['name'] ){
 						var obj : Array<Discord.ApplicationCommandPermissionData> = [];
@@ -112,7 +115,8 @@ export class PluginBase {
 
 							}
 							//console.log(per);
-							guild_list[guild_item].commands.permissions.add(per);
+							var re = await guild_list[guild_item].commands.permissions.add(per);
+							//console.log(re);
 						}
 					}
 				}

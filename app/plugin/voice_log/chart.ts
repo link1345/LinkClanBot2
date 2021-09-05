@@ -10,6 +10,38 @@ import { DefaultDeserializer } from 'v8';
 
 import * as dfd from 'danfojs-node';
 
+export async function most_oldMonth(config: Object) : Promise< Object >{
+
+	var labels = []
+	var fileNameList = []
+
+	console.log("config output_TimeLine_folderpath : " , config)
+
+	var files = await fs.promises.readdir( config["output_TimeLine_folderpath"] );
+
+	//console.log("files : " , files)
+
+	for( var old_month = 1 ; old_month < 13 ; old_month++ ){
+		var move_day = new Date;
+		move_day.setMonth( move_day.getMonth() - old_month );
+		var year  = move_day.getFullYear();
+		var month = ("0"+ Number(move_day.getMonth() + 1) ).slice(-2);
+
+		var fileName = config["output_TimeLine_folderpath"] + year.toString() + month.toString() + ".yml" ;
+		console.log(fileName);
+
+		var find_id = files.indexOf(  year.toString() + month.toString() + ".yml"  );
+		console.log( __dirname ," == ", fileName , " => " , find_id);
+		if(find_id != -1){
+			labels.push( year.toString() + "/" + month.toString() );
+			fileNameList.push( fileName );
+		}else{
+			// 見つからなかったので検索はここで終わり。
+			break;
+		}
+	}
+	return {"fileList": fileNameList, "label": labels};
+}
 
 // ロールに合うメンバーを返す。
 async function UserRoleMember( client: Discord.Client, RoleList: Array<String>) {
