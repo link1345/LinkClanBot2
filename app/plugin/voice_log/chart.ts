@@ -43,8 +43,49 @@ export async function most_oldMonth(config: Object) : Promise< Object >{
 	return {"fileList": fileNameList, "label": labels};
 }
 
+
+export async function table_MakeTimeList(client: Discord.Client, MonthFileList: Array<string>, Lables: Array<string> , RoleList: Array<String> ) :  Promise<dfd.DataFrame>{
+	var members : Array<Discord.GuildMember>;
+	if( MonthFileList ){
+		members = await UserRoleMember(client, RoleList);
+		
+		console.log("members === " , members);
+	}
+	if (members == null){
+		return null;
+	}
+
+	var all_df: dfd.DataFrame = null;
+	for( var fileName of MonthFileList ){
+		var df : dfd.DataFrame = await one_MakeTimeList(client,fileName, RoleList, members);
+
+		if ( df == null){
+			break;
+		}
+		
+		//console.log("make1 df === " , df);
+
+		//console.log("labelID === " ,MonthFileList.indexOf(fileName)  );
+		var labelName = Lables[MonthFileList.indexOf(fileName)];
+		//console.log("labelName === " , labelName );
+		//console.log("make2 df === " , df.rename({ mapper: {"time": labelName}}) );
+		df = df.rename({ mapper: {"time": labelName}});
+		
+		if( MonthFileList.indexOf(fileName) == 0 ){
+			all_df = df;
+		}else{
+			df.drop({ columns: ["display"], axis: 1, inplace: true });
+			all_df = dfd.merge({ "left": df , "right": all_df, "on": ["name"]})
+		}
+	}
+
+	//console.log("all_df === " , all_df);
+
+	return all_df;
+}
+
 // ロールに合うメンバーを返す。
-async function UserRoleMember( client: Discord.Client, RoleList: Array<String>) {
+export async function UserRoleMember( client: Discord.Client, RoleList: Array<String>) : Promise<Array<Discord.GuildMember>>{
 	var hit = 0;
 
 	await client.guilds.fetch();
@@ -73,13 +114,20 @@ async function UserRoleMember( client: Discord.Client, RoleList: Array<String>) 
 }
 
 export async function MakeTimeList( client: Discord.Client, Datafile_path: string , RoleList: Array<String> ) :  Promise<dfd.DataFrame>{
-//export async function MakeTimeList( client: Discord.Client, Datafile_path: string , RoleList: Array<String> ) {
+	var members = await UserRoleMember(client, RoleList);
+	return await one_MakeTimeList(this.fix_client, Datafile_path,this.config["Periodic_output_Role"], members);
+}
+
+export async function one_MakeTimeList( client: Discord.Client, Datafile_path: string , RoleList: Array<String>, members : Array<Discord.GuildMember>  ) :  Promise<dfd.DataFrame>{
 
 	// ユーザーリスト取得
-	var members = await UserRoleMember(client, RoleList);
+	//var members = await UserRoleMember(client, RoleList);
 	//console.log("out : " , members );
 
 	var members_id =  members.map(member => member.id) ;
+	var members_name =  members.map(member => member.user.username + "#" + member.user.discriminator) ;
+
+	if ( members_id.length == 0 ) return;
 
 	// ログを取得
 	var baseData = yaml.load(fs.readFileSync(Datafile_path, 'utf8'));
@@ -88,6 +136,7 @@ export async function MakeTimeList( client: Discord.Client, Datafile_path: strin
 	//var returnData = new dfd.DataFrame([]);
 	var return_data = { 
 		'name': members_id,
+		'display':  members_name,
 		'start': new Array( members_id.length ),
 		'exit': new Array( members_id.length ),
 		'time': new Array( members_id.length ),
@@ -129,7 +178,7 @@ export async function MakeTimeList( client: Discord.Client, Datafile_path: strin
 
 			return_data["start"][indexNum] = null;
 			return_data["exit"][indexNum] = null;
- 		} 
+		} 
 	}
 	
 	var num = 0;
@@ -145,6 +194,7 @@ export async function MakeTimeList( client: Discord.Client, Datafile_path: strin
 	data.drop({ columns: ["start", "exit"], axis: 1, inplace: true });
 
 	//console.log("return => " , data);
+
 
 	return data;
 }

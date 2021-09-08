@@ -40,7 +40,7 @@ export class main extends PluginBase {
 		try {
 			await fs.promises.rename( this.config["output_TimeLine_filepath"], movefileName ); // 本番はこれ動かす。
 
-			var output_data : dfd.DataFrame = await chart.MakeTimeList(this.fix_client, movefileName,this.config["Periodic_output_Role"]); 
+			var output_data : dfd.DataFrame = await chart.MakeTimeList(this.fix_client, movefileName, this.config["Periodic_output_Role"]); 
 			var profileName = this.config["processed_output_TimeLine_folderpath"] + year.toString() + month.toString() + ".csv" ;
 			
 			await output_data.to_csv(profileName);

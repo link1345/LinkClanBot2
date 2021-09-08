@@ -7,36 +7,53 @@ import * as cron from 'node-cron';
 
 import {PluginBase} from '../../util/plugin_base';
 import * as chart from './chart';
+import { copyFileSync } from 'fs';
+
+import * as dfd from 'danfojs-node';
 
 export class main extends PluginBase {
+
+	oldMonthList : Object ;
+	//cron_init_setCommand ;
 
 	constructor(fix_client: Discord.Client, config: Object, base_doc:Object, rest:REST){
 		super(fix_client, config, base_doc, rest, path.basename(path.dirname(__filename)) );
 
+		this.oldMonthList = {};
+		//this.cron_init_setCommand;
+
 		cron.schedule('0 0 0 * * *', () => console.log('test minute0 -----------'));
+		cron.schedule('0 0 0 * * *', () => this.monthCommand_update(this.config).then() );
 		
-		cron.schedule('*/20 * * * * *', () => this.test(this.config).then() );
 	}
 
 
 	async ready(client: Discord.Client, config: Object){
 	}
 
-	private async test(config: Object){
+	// コマンド初期化処理。(1回だけ)
+	private async init_checkCommand(config: Object){
 
-		console.log("test RUN!");
+		for (var commandItem of PluginBase.commandList){
+			//console.log( commandItem );
+			if( commandItem["name"] === "admin-voicelog") {
+				await this.monthCommand_update(config);
+				return true;
+			}else{
+				return false;
+			}
+		}
 
-		/*
-		this.fix_client.application.commands.fetch();
-		var oldlist : Object = await chart.most_oldMonth(config);
-		console.log(oldlist);
-		*/
-		
-		this.fix_client.guilds.fetch();
+	}
+
+	private async monthCommand_update(config: Object){
+		//console.log("test RUN!");
+	
+		await this.fix_client.guilds.fetch();
 		
 		for( var [guild_key, guild_value] of this.fix_client.guilds.cache ){
-			guild_value.commands.fetch();
-			console.log(guild_value.name);
+			await guild_value.commands.fetch();
+			//console.log(guild_value.name);
 			//console.log( guild_value.commands.cache );
 			for( var [key , value] of guild_value.commands.cache ){
 				
@@ -44,7 +61,10 @@ export class main extends PluginBase {
 
 				// 当たりなら...
 				var oldlist : Object = await chart.most_oldMonth(config);
-				console.log(oldlist);
+
+				this.oldMonthList = oldlist;
+
+				//console.log(oldlist);
 
 				for( var o_item of value["options"]){
 					if( o_item["name"] != "month" ) continue;
@@ -52,39 +72,72 @@ export class main extends PluginBase {
 					o_item["choices"] = []
 
 					for( var i = 0 ; i < oldlist["label"].length; i++ ){
-						o_item["choices"].push({ "name" : oldlist["label"][i] , "value": oldlist["label"][i] });
+						o_item["choices"].push({ "name" : oldlist["label"][i] , "value": String(i) });
 					}
 				}
-				console.log("value[options]   ....   " , value["options"])
+				//console.log("value[options]   ....   " , value["options"])
+				
+				for( var o_item of value["options"]){
+					//console.log("value[options][choices]   ....   " , o_item["choices"])
+				}
+				var co_data : Discord.ApplicationCommandData = value;
+				await value.edit( co_data )
 
-				//guild_value.edit();
-
+				//console.log(value);
 			}
+			//guild_value.commands.set();
 		}
 
-		//console.log("command_item => " , command_item);
-		//for( var c_item of command_item ){
-		//	console.log(c_item);
-		//}
-		/*
-		var setData : Discord.ApplicationCommandData = null ;
-		for(var i = 0; i < oldlist["label"].length; i++){
-			
-		}
-		
-		this.fix_client.application.commands.edit(id, setData, guild_id);
-		oldlist["label"]
-		*/
-		//this.fix_client.application.commands.edit();
 	}
 
 
 	async interactionCreate(client: Discord.Client, config: Object, interaction: Discord.Interaction){
 		if (!interaction.isCommand()) return;
 
-		if (interaction.commandName === 'admin-voicelog') {
+		if( interaction.commandName === "init-command-voicelog" ){
+			if( await this.init_checkCommand(config)) interaction.reply("init Command!");
+			else interaction.reply("ERROR : init Command!");
+		}
+		else if (interaction.commandName === 'admin-voicelog') {
 			//interaction.commandId;
-			await interaction.reply('Pong!  ' + interaction.id);
+			//await interaction.reply('Pong!  ' + interaction.id);
+
+			//console.log( interaction.options.data ) ;
+			console.log( interaction.options.get("month").value ) ;
+
+			//console.log( this.oldMonthList["fileList"] );
+			
+			console.log( interaction.options.get("format").value );
+
+			// raw
+			if(interaction.options.get("format").value === "raw"){
+				console.log("OK!  raw " , this.oldMonthList["fileList"] );
+
+				var item = this.oldMonthList["fileList"].slice( Number(interaction.options.get("month").value) );
+				console.log("files => " , item);
+				await interaction.reply({ content: "**【報告】**rawデータ(yml)を出力したぜ！。" , files: item });
+			}
+			// csv
+			else{
+				var table : dfd.DataFrame;
+				//for(var i = 0; i < Number(interaction.options.get("month").value) + 1; i++ ){
+				
+				var item_oldMonthList_fileList = this.oldMonthList["fileList"].slice( Number(interaction.options.get("month").value) );
+				var item_oldMonthList_label = this.oldMonthList["label"].slice( Number(interaction.options.get("month").value) );
+
+				//console.log(item_oldMonthList_label);
+
+				table = await chart.table_MakeTimeList( this.fix_client ,  item_oldMonthList_fileList  ,  item_oldMonthList_label , this.config["Periodic_output_Role"] );
+				//}
+				if( table == null ){
+					await interaction.reply({ content: "**【ERROR】**データを加工してファイル出力できませんでした。" });
+				}else{
+					var csv_file = this.config["processed_output_TimeLine_folderpath"] + "anaylze.csv";
+					await table.to_csv(csv_file);
+					await interaction.reply({ content: "**【報告】**加工済みデータ(CSV)を出力したぜ！" , files: [csv_file]});
+				}
+			}
+
 		}
 
 
