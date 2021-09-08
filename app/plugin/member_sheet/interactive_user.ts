@@ -13,9 +13,17 @@ export class main extends PluginBase  {
 		
 	}
 
-	async ready(client_init, config){
-		super.ready(client_init, config);
-		console.log("run memberSheet interactive!");
+	async ready(client: Discord.Client, config: Object){
+		super.ready(client, config);
+		//console.log("run memberSheet interactive!");
+	}
+
+	async guildMemberUpdate(client: Discord.Client, config: Object, oldMember:Discord.GuildMember, newMember:Discord.GuildMember ){
+		console.log("run guildMemberUpdate interactive!");
+
+		
+
+
 	}
 
 }

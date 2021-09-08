@@ -29,6 +29,7 @@ export class main extends PluginBase {
 
 
 	async ready(client: Discord.Client, config: Object){
+		super.ready(client, config);
 	}
 
 	// コマンド初期化処理。(1回だけ)
