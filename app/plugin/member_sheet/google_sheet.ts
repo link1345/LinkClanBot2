@@ -1,86 +1,36 @@
-//const fs = require('fs');
-//const readline = require('readline');
-//const {google} = require('googleapis');
-
+import { GoogleSpreadsheet, GoogleSpreadsheetWorksheet } from 'google-spreadsheet';
 
 import * as fs from 'fs';
-import * as readline from 'readline';
-import {google, run_v1} from 'googleapis';
-import { json } from 'stream/consumers';
-import { OAuth2Client } from 'google-auth-library';
 
 
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
-const TOKEN_PATH = 'token.json';
-
-async function init_googleSheet() {
-	var content = fs.readFileSync('credentials.json', 'utf8');
-	authorize(JSON.parse(content), listMajors );
+export async function getDocment(config: Object) : Promise<GoogleSpreadsheet>{
+	const creds = JSON.parse( fs.readFileSync(config["credentials_filepath"], 'utf8') );
+	const doc : GoogleSpreadsheet = new GoogleSpreadsheet(config["GOOGLE_SPREADSHEET_KEY"]);
+	await doc.useServiceAccountAuth(creds);
+	await doc.loadInfo();
+	return doc;
 }
 
+export async function check_tabel(config: Object , sheet: GoogleSpreadsheetWorksheet){
+	console.log(sheet);
+	await sheet.loadHeaderRow();
+	const rows = sheet.headerValues;
 
-async function authorize(credentials, callback) {
+	const labels = config["SheetIndex"].map(data => data.label );
 
+	console.log(rows);
+	console.log(labels);
 
-	const {client_secret, client_id, redirect_uris} = credentials.installed;
-	const oAuth2Client = new google.auth.OAuth2( client_id, client_secret, redirect_uris[0] );
-
-	var token = "";
-	try{
-		token = (await fs.promises.readFile(TOKEN_PATH)).toString() ;
-		oAuth2Client.setCredentials(JSON.parse(token));
-	}catch{
-		return await getNewToken(oAuth2Client, callback);
-	}
-
-}
-
-
-async function getNewToken(oAuth2Client: OAuth2Client, callback) {
-	const authUrl = oAuth2Client.generateAuthUrl({
-		access_type: 'offline',
-		scope: SCOPES,
-	});
-	console.log('Authorize this app by visiting this url:', authUrl);
-	const rl = readline.createInterface({
-		input: process.stdin,
-		output: process.stdout,
-	});
-	rl.question('Enter the code from that page here: ', (code) => {
-	rl.close();
-	oAuth2Client.getToken(code, async(err, token) => {
-		if (err) return console.error('Error while trying to retrieve access token', err);
-		oAuth2Client.setCredentials(token);
-
-		var write = await fs.promises.writeFile(TOKEN_PATH, JSON.stringify(token) );
-		callback(oAuth2Client);
-		});
-	});
-	//r1.question
-}
-
-
-
-function listMajors(auth) {
+	var old_item = labels.filter(item => rows.indexOf(item) == -1);
+	var new_item = rows.filter(item => labels.indexOf(item) == -1);
 	
-	
-	const sheets = google.sheets({version: 'v4', auth});
-	sheets.spreadsheets.values.get({
-	spreadsheetId: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
-	range: 'Class Data!A2:E',
-	}, (err, res) => {
-	if (err) return console.log('The API returned an error: ' + err);
-	const rows = res.data.values;
-	if (rows.length) {
-		console.log('Name, Major:');
-		// Print columns A and E, which correspond to indices 0 and 4.
-		rows.map((row) => {
-		console.log(`${row[0]}, ${row[4]}`);
-		});
-	} else {
-		console.log('No data found.');
+	console.log(old_item);
+	console.log(new_item);
+
+	if( old_item.length === 0 && new_item.length === 0 ){
+		return true;
+	}else{
+		return false;
 	}
-	});
-
-
+	return false;
 }

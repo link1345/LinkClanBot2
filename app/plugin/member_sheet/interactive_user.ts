@@ -6,6 +6,8 @@ import * as path from 'path';
 
 import {PluginBase} from '../../util/plugin_base';
 
+import * as google from './google_sheet'
+
 export class main extends PluginBase  {
 	
 	constructor(fix_client: Discord.Client, config: Object, base_doc:Object, rest:REST){
@@ -19,11 +21,12 @@ export class main extends PluginBase  {
 	}
 
 	async guildMemberUpdate(client: Discord.Client, config: Object, oldMember:Discord.GuildMember, newMember:Discord.GuildMember ){
-		console.log("run guildMemberUpdate interactive!");
+		//console.log("run guildMemberUpdate interactive!");
+		//console.log(  oldMember.displayName , " => " , newMember.displayName );
+	}
 
-		
-
-
+	async interactionCreate(client: Discord.Client, config: Object, interaction: Discord.Interaction){
+		if (!interaction.isCommand()) return;
 	}
 
 }

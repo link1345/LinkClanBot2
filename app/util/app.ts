@@ -79,7 +79,6 @@ export class AppManager {
 		});
 		
 		//console.log(this.moduleList)
-		console.log("check! " , this.slashCommands);
 	}
 
 	async load(){

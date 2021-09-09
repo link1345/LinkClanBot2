@@ -13,6 +13,7 @@ import * as dfd from 'danfojs-node';
 import {PluginBase} from '../../util/plugin_base';
 import * as chart from './chart';
 
+import * as channelSend from '../../util/channel_send';
 
 export class main extends PluginBase {
 
@@ -44,6 +45,12 @@ export class main extends PluginBase {
 			var profileName = this.config["processed_output_TimeLine_folderpath"] + year.toString() + month.toString() + ".csv" ;
 			
 			await output_data.to_csv(profileName);
+
+			/// ログ出力のDiscordメッセージを出す。
+			var channels = await channelSend.ChannelList(this.fix_client, this.config["Periodic_output_Channel"] );
+			for( var item of channels ){
+				item.send({ content:"ログを出力します。", files:[profileName] });
+			}
 
 			console.log("OK");
 		}catch(error){

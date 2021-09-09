@@ -66,7 +66,6 @@ export class PluginBase {
 
 		try {
 			//console.log('Started refreshing application (/) commands.');
-
 			//console.log( "   Set Command => " , this.config["slashCommand"] );
 			
 			this.settingReturn_SlashCommands = await this.rest.put(
