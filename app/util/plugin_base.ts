@@ -19,6 +19,8 @@ export class PluginBase {
 	// slashコマンド登録後のリターンログ
 	settingReturn_SlashCommands:  Object;
 
+	name : string;
+
 	constructor(fix_client: Discord.Client, config: Object, base_doc:Object, rest:REST , className:string ){
 		this.fix_client = fix_client;
 		this.config = config;
@@ -27,13 +29,17 @@ export class PluginBase {
 
 		this.settingReturn_SlashCommands = [];
 	
-		this.init_SlashCommands(className);
+		//await this.init_SlashCommands(className);
+		this.name = className;
 	}
 
 	async ready(fix_client: Discord.Client, config: Object){
 		//console.log("ready PluginBase!");
+		//console.log(this.name);
+		await this.init_SlashCommands(this.name);
+		await this.init_PermissionSlashCommands();
 
-		this.init_PermissionSlashCommands();
+		return ;
 	}
 
 	async exit(fix_client: Discord.Client, config: Object){
@@ -43,13 +49,14 @@ export class PluginBase {
 			console.log( this.settingReturn_SlashCommands[item]["name"] , "コマンド 削除! , ID:" ,  this.settingReturn_SlashCommands[item]["id"] );
 
 			// 削除！
-			await fix_client.application.commands.delete( this.settingReturn_SlashCommands[item]["id"] , this.settingReturn_SlashCommands[item]["guild_id"] );
+			var rData = await fix_client.application.commands.delete( this.settingReturn_SlashCommands[item]["id"] , this.settingReturn_SlashCommands[item]["guild_id"] );
 			// Guild ID の取得方法  ※ リストが帰ってくるYO
-			//const guilddata = fix_client.guilds.cache.map(guild => guild.id);
-			//console.log( guilddata );
+			//console.log( rData );
 		}
 	}
 
+	/////////// 廃止。this.rest.putでの分割送信はNG。
+	///////////   #14を参照
 	private async init_SlashCommands(className:string){
 		
 		// コマンドを重複登録しないように設定。
@@ -59,14 +66,14 @@ export class PluginBase {
 			PluginBase.classList[className] = 0;
 		}
 		this.classID = PluginBase.classList[className];
-		//console.log(PluginBase.classList , className in PluginBase.classList );
+		console.log(PluginBase.classList , className in PluginBase.classList );
 		if ( !(this.config["slashCommand"] != null && this.classID == 0) ){
 			return ;
 		}
 
 		try {
-			//console.log('Started refreshing application (/) commands.');
-			//console.log( "   Set Command => " , this.config["slashCommand"] );
+			console.log('Started refreshing application (/) commands.');
+			console.log( "   Set Command => " , this.config["slashCommand"] );
 			
 			this.settingReturn_SlashCommands = await this.rest.put(
 				Routes.applicationGuildCommands(this.base_doc["CLIENT_ID"], this.base_doc["GUILD_ID"]),
@@ -75,22 +82,23 @@ export class PluginBase {
 
 			PluginBase.commandList = PluginBase.commandList.concat( this.settingReturn_SlashCommands );
 
-			//console.log("return => " , this.settingReturn_SlashCommands);
+			console.log("return => " , this.settingReturn_SlashCommands);
 			
-			//console.log('Successfully reloaded application (/) commands.');
+			console.log('Successfully reloaded application (/) commands.');
 		} catch (error) {
 			console.error(error);
 		}
+		return ;
 
 	}
 
 	private async init_PermissionSlashCommands(){
-		
 		if ( this.classID != 0 ){
 			return ;
-		}
+		}		
+		//console.log( "PluginBase.commandList ===> ",  PluginBase.commandList );
 
-		this.fix_client.guilds.fetch();
+		await this.fix_client.guilds.fetch();
 		var guild_list = this.fix_client.guilds.cache.map(guild => guild);
 		for( var guild_item in guild_list ){
 					
@@ -98,7 +106,7 @@ export class PluginBase {
 				for( var setting in this.settingReturn_SlashCommands ){
 					
 					
-					//console.log(this.settingReturn_SlashCommands[setting]);
+					console.log("this.settingReturn_SlashCommands[setting] ===> " , this.settingReturn_SlashCommands[setting]);
 
 					if( this.config["slashCommand_permissions"][t_permission]['name'] == this.settingReturn_SlashCommands[setting]['name'] ){
 						var obj : Array<Discord.ApplicationCommandPermissionData> = [];
@@ -125,6 +133,7 @@ export class PluginBase {
 
 		}
 
+		return ;
 	}
 
 }

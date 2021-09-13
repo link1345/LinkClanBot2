@@ -71,11 +71,6 @@ export class AppManager {
 				this.moduleList.push( pluginItemData );
 			}
 
-			// ------- やらない ------------
-			//  ~~ ついでに、slashCommandも観ておく ~~
-			//if ( "slashCommand" in pluginItemData["config"] ){
-			//	this.slashCommands = this.slashCommands.concat( pluginItemData["config"]["slashCommand"] );
-			//}
 		});
 		
 		//console.log(this.moduleList)
@@ -87,24 +82,6 @@ export class AppManager {
 		//console.log( "load : ", this.moduleList );
 	}
 
-/*
-// ここではやらない
-	async init_SlashCommands(){
-		try {
-			console.log('Started refreshing application (/) commands.');
-			
-			await this.rest.put(
-				Routes.applicationGuildCommands(this.base_doc["CLIENT_ID"], this.base_doc["GUILD_ID"]),
-				{ body: this.slashCommands },
-			);
-			
-			console.log('Successfully reloaded application (/) commands.');
-		} catch (error) {
-			console.error(error);
-		}
-	}
-*/
-
 
 	run_func = async<T extends readonly any[]>( eventName:string, module: Object[], client: Client, data:[...T] ) => {
 		for(let item of module){
@@ -112,9 +89,12 @@ export class AppManager {
 			for( let obj_key of Object.keys( item["object"] ) ){
 
 				//console.log( "Event:" ,  eventName , ", Name:" , obj_key);
-
+				if( item["object"][obj_key]["obj"][eventName] == null ) continue;
 				try {
-					await item["object"][obj_key]["obj"][eventName](client, item["config"], ...data);
+					//console.log("start!  obj_key " , obj_key , "   eventName " , eventName, "   : " , item["object"][obj_key]["obj"][eventName] );
+					( await item["object"][obj_key]["obj"][eventName](client, item["config"], ...data) );				
+					//console.log("end!  obj_key " , obj_key , "   eventName " , eventName);
+				
 				}catch(error) {
 					if (error instanceof TypeError){
 						// 関数がない場合の処理
@@ -138,7 +118,6 @@ export class AppManager {
 			const _e = async<T extends readonly any[]> (...data:[...T]) => {
 				await this.run_func( eventName, this.moduleList , this.client , data);
 			}
-		
 			this.client.on(eventName, _e );
 		}
 		
