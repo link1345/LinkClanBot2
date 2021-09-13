@@ -12,3 +12,13 @@ export async function ChannelList(client: Discord.Client, channelID: Array<Strin
 	}
    	return channel_list;
 }
+
+export function text_check(text: string): string{
+	text = text.replace("/_/g",'\_');
+	text = text.replace("/*/g","\*");
+	text = text.replace("/~/g","\~");
+	text = text.replace("/|/g","\|");
+	text = text.replace("/`/g","\`");
+	text = text.replace("/>/g","\>");
+	return text;
+}
