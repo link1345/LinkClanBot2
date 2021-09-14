@@ -2,6 +2,7 @@ import * as Discord from 'discord.js';
 
 import {REST} from '@discordjs/rest';
 import {Routes} from 'discord-api-types/v9';
+import { send } from 'process';
 
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
@@ -17,7 +18,7 @@ export class PluginBase {
 	rest: REST;
 
 	// slashコマンド登録後のリターンログ
-	settingReturn_SlashCommands:  Object;
+	settingReturn_SlashCommands:  Array<Discord.ApplicationCommand>;
 
 	name : string;
 
@@ -45,11 +46,11 @@ export class PluginBase {
 	async exit(fix_client: Discord.Client, config: Object){
 		//console.log("exit PluginBase!  => ", config);
 
-		for(var item in this.settingReturn_SlashCommands){
-			console.log( this.settingReturn_SlashCommands[item]["name"] , "コマンド 削除! , ID:" ,  this.settingReturn_SlashCommands[item]["id"] );
-
+		for(var item of this.settingReturn_SlashCommands){
+			console.log( item["name"] , "コマンド 削除! , ID:" ,  item["id"] );
+			var sendData : Discord.ApplicationCommandResolvable = item;
 			// 削除！
-			var rData = await fix_client.application.commands.delete( this.settingReturn_SlashCommands[item]["id"] , this.settingReturn_SlashCommands[item]["guild_id"] );
+			var rData = await fix_client.application.commands.delete( item["id"] , this.base_doc["GUILD_ID"] );
 			// Guild ID の取得方法  ※ リストが帰ってくるYO
 			//console.log( rData );
 		}
@@ -75,11 +76,23 @@ export class PluginBase {
 			console.log('Started refreshing application (/) commands.');
 			console.log( "   Set Command => " , this.config["slashCommand"] );
 			
+			/*
 			this.settingReturn_SlashCommands = await this.rest.put(
 				Routes.applicationGuildCommands(this.base_doc["CLIENT_ID"], this.base_doc["GUILD_ID"]),
-				{ body: this.config["slashCommand"] },
-			);	
+				{ body: [this.config["slashCommand"]] },
+			);		
+			PluginBase.commandList = PluginBase.commandList.concat( this.settingReturn_SlashCommands );
+			*/
 
+			for( var command_item of this.config["slashCommand"] ){
+
+				//console.log(command_item);
+
+				var sendItem : Discord.ApplicationCommandData = command_item;
+
+				var rItem =  await this.fix_client.application.commands.create( sendItem, this.base_doc["GUILD_ID"] );
+				this.settingReturn_SlashCommands = this.settingReturn_SlashCommands.concat( rItem );
+			}
 			PluginBase.commandList = PluginBase.commandList.concat( this.settingReturn_SlashCommands );
 
 			console.log("return => " , this.settingReturn_SlashCommands);
@@ -104,9 +117,8 @@ export class PluginBase {
 					
 			for( var t_permission in this.config["slashCommand_permissions"] ) {
 				for( var setting in this.settingReturn_SlashCommands ){
-					
-					
-					console.log("this.settingReturn_SlashCommands[setting] ===> " , this.settingReturn_SlashCommands[setting]);
+				
+					//console.log("this.settingReturn_SlashCommands[setting] ===> " , this.settingReturn_SlashCommands[setting]);
 
 					if( this.config["slashCommand_permissions"][t_permission]['name'] == this.settingReturn_SlashCommands[setting]['name'] ){
 						var obj : Array<Discord.ApplicationCommandPermissionData> = [];
@@ -121,7 +133,7 @@ export class PluginBase {
 								"permissions" : obj
 
 							}
-							//console.log(per);
+							console.log("setting_PermissionData ===> ", per);
 							var re = await guild_list[guild_item].commands.permissions.add(per);
 							//console.log(re);
 						}

@@ -84,6 +84,15 @@ export class AppManager {
 
 
 	run_func = async<T extends readonly any[]>( eventName:string, module: Object[], client: Client, data:[...T] ) => {
+		
+		// コマンド初期化
+		if(eventName === "ready"){
+			await this.rest.put(
+				Routes.applicationGuildCommands(this.base_doc["CLIENT_ID"], this.base_doc["GUILD_ID"]),
+				{ body: [] },
+			);
+		}
+		
 		for(let item of module){
 			
 			for( let obj_key of Object.keys( item["object"] ) ){
