@@ -23,35 +23,68 @@ export class main extends PluginBase {
 		//this.cron_init_setCommand;
 
 		cron.schedule('0 0 0 * * *', () => console.log('test minute0 -----------'));
-		cron.schedule('0 0 0 * * *', () => this.monthCommand_update(this.config).then() );
+		cron.schedule('0 0 0 * * *', () => this.init_checkCommand(this.config).then() );
 		
 	}
 
 
 	async ready(client: Discord.Client, config: Object){
-		super.ready(client, config);
+		await super.ready(client, config);
+		if ( await this.init_checkCommand(config) ){
+			console.log("********* OK!!");
+		}else{
+			console.log("********* NG!!");
+		}
 	}
 
 	// コマンド初期化処理。(1回だけ)
 	private async init_checkCommand(config: Object){
-
+		/*
 		for (var commandItem of PluginBase.commandList){
-			//console.log( commandItem );
+			//console.log( commandItem["name"] );
 			if( commandItem["name"] === "admin-voicelog") {
-				await this.monthCommand_update(config);
+				await this.monthCommand_update(commandItem);
 				return true;
-			}else{
-				return false;
+			}
+		}*/
+
+		var SlashItem : Discord.ApplicationCommand ;
+		console.log("this.settingReturn_SlashCommands ===> ", PluginBase.commandList);
+		for( var item of PluginBase.commandList ){
+			if(item["name"] == 'admin-voicelog'){
+				SlashItem = item;
+				break;
 			}
 		}
+		if ( SlashItem == null ) return false;
+		await this.monthCommand_update(config,SlashItem);
+
+		return true;
 
 	}
 
-	private async monthCommand_update(config: Object){
+	private async monthCommand_update(config:Object, commandItem: Discord.ApplicationCommand){
 		//console.log("test RUN!");
-	
-		await this.fix_client.guilds.fetch();
+		var Data : Discord.ApplicationCommandData = commandItem;
+		//var OptionData : Discord.ApplicationCommandOptionData = {type:3, name:"", description:"", choices:[]};
 		
+		var oldlist : Object = await chart.most_oldMonth(config);
+		this.oldMonthList = oldlist;
+		for( var o_item of Data["options"]){
+			if( o_item["name"] != "month" ) continue;
+
+			o_item["choices"] = []
+
+			for( var i = 0 ; i < oldlist["label"].length; i++ ){
+				o_item["choices"].push({ "name" : oldlist["label"][i] , "value": String(i) });
+			}
+		}
+		await commandItem.edit(Data);
+		
+		//commandItem.edit();
+
+		/*
+		await this.fix_client.guilds.fetch();
 		for( var [guild_key, guild_value] of this.fix_client.guilds.cache ){
 			await guild_value.commands.fetch();
 			//console.log(guild_value.name);
@@ -88,7 +121,7 @@ export class main extends PluginBase {
 			}
 			//guild_value.commands.set();
 		}
-
+		*/
 	}
 
 

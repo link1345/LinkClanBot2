@@ -9,7 +9,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 
 export class PluginBase {
 	static classList: Object = {};
-	static commandList: Array<Object> = [];
+	static commandList: Array<Discord.ApplicationCommand> = [];
 	classID : Number ;
 
 	fix_client: Discord.Client; // できるだけ使わない方がいい。というか普通動かん。
@@ -18,7 +18,7 @@ export class PluginBase {
 	rest: REST;
 
 	// slashコマンド登録後のリターンログ
-	settingReturn_SlashCommands:  Array<Discord.ApplicationCommand>;
+	private settingReturn_SlashCommands:  Array<Discord.ApplicationCommand>;
 
 	name : string;
 
@@ -40,6 +40,10 @@ export class PluginBase {
 		await this.init_SlashCommands(this.name);
 		await this.init_PermissionSlashCommands();
 
+		//console.log("START EVENT  == " , this.name );
+		//await new Promise(resolve => setTimeout(resolve, 3 * 1000));
+		//console.log("END EVENT  == " , this.name );
+
 		return ;
 	}
 
@@ -56,9 +60,7 @@ export class PluginBase {
 		}
 	}
 
-	/////////// 廃止。this.rest.putでの分割送信はNG。
-	///////////   #14を参照
-	private async init_SlashCommands(className:string){
+	private async init_SlashCommands(className:string): Promise<void>{
 		
 		// コマンドを重複登録しないように設定。
 		if( className in PluginBase.classList ){
@@ -72,40 +74,30 @@ export class PluginBase {
 			return ;
 		}
 
-		try {
-			console.log('Started refreshing application (/) commands.');
-			console.log( "   Set Command => " , this.config["slashCommand"] );
-			
-			/*
-			this.settingReturn_SlashCommands = await this.rest.put(
-				Routes.applicationGuildCommands(this.base_doc["CLIENT_ID"], this.base_doc["GUILD_ID"]),
-				{ body: [this.config["slashCommand"]] },
-			);		
-			PluginBase.commandList = PluginBase.commandList.concat( this.settingReturn_SlashCommands );
-			*/
+		//console.log('Started refreshing application (/) commands.');
+		//console.log( "   Set Command => " , this.config["slashCommand"] );
+		
+		for( var command_item of this.config["slashCommand"] ){
 
-			for( var command_item of this.config["slashCommand"] ){
+			//console.log(command_item);
 
-				//console.log(command_item);
+			var sendItem : Discord.ApplicationCommandData = command_item;
 
-				var sendItem : Discord.ApplicationCommandData = command_item;
-
-				var rItem =  await this.fix_client.application.commands.create( sendItem, this.base_doc["GUILD_ID"] );
-				this.settingReturn_SlashCommands = this.settingReturn_SlashCommands.concat( rItem );
-			}
-			PluginBase.commandList = PluginBase.commandList.concat( this.settingReturn_SlashCommands );
-
-			console.log("return => " , this.settingReturn_SlashCommands);
-			
-			console.log('Successfully reloaded application (/) commands.');
-		} catch (error) {
-			console.error(error);
+			//await new Promise(resolve => setTimeout(resolve, 3 * 1000));
+			var rItem =  await this.fix_client.application.commands.create( sendItem, this.base_doc["GUILD_ID"] );
+			this.settingReturn_SlashCommands = this.settingReturn_SlashCommands.concat( rItem );
 		}
+		PluginBase.commandList = PluginBase.commandList.concat( this.settingReturn_SlashCommands );
+
+		console.log("return => " , this.settingReturn_SlashCommands);
+		//console.log('Successfully reloaded application (/) commands.');
+		
+			
 		return ;
 
 	}
 
-	private async init_PermissionSlashCommands(){
+	private async init_PermissionSlashCommands(): Promise<void>{
 		if ( this.classID != 0 ){
 			return ;
 		}		
@@ -133,7 +125,7 @@ export class PluginBase {
 								"permissions" : obj
 
 							}
-							console.log("setting_PermissionData ===> ", per);
+							//console.log("setting_PermissionData ===> ", per);
 							var re = await guild_list[guild_item].commands.permissions.add(per);
 							//console.log(re);
 						}

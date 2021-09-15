@@ -64,6 +64,7 @@ export class AppManager {
 					pluginItemData["object"][func_text]["func"] = require(func_text)["main"];
 					//console.log("func: " , pluginItemData["object"][func_text] );
 					pluginItemData["object"][func_text]["obj"] =  new pluginItemData["object"][func_text]["func"](this.client, pluginItemData["config"], this.base_doc, this.rest) ;
+
 				}
 			}
 

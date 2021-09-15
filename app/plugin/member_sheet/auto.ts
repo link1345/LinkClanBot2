@@ -44,7 +44,7 @@ export class main extends PluginBase  {
 	}
 
 	async ready(client: Discord.Client, config: Object){
-		super.ready(client, config);
+		await super.ready(client, config);
 		//console.log("run memberSheet interactive!");
 	}
 
@@ -206,32 +206,7 @@ export class main extends PluginBase  {
 		// 既にあるユーザ検索して、操作。
 		if( newMemberFlag === false && deleteMemberFlag === false ){
 
-			var user_point = -1;
-
-			await sheet.loadCells({
-				startRowIndex: 0, endRowIndex : sheet.rowCount,
-				startColumnIndex:id_point, 
-			});
-
-			//console.log( "sheet.columnCount " , sheet.rowCount );
-
-			var null_count = 0;
-			for( var y = 0; y < sheet.rowCount ; y++ ){
-				if(null_count >= 5) break;
-				
-				var cell = sheet.getCell(y, id_point);
-
-				//console.log( "id " , oldMember.user.id );
-				//console.log( "cell " , cell.value );
-
-				if( String(oldMember.user.id) === String(cell.value) ) {
-					user_point = y;	
-					break;
-				}
-				null_count += 1;
-			}
-
-			console.log( "user_point  " , user_point );
+			var user_point = await google.getUserPoint(sheet, id_point, oldMember.user.id);
 
 			if(user_point == -1) newMemberFlag = true;			
 			// ここで編集
@@ -243,7 +218,6 @@ export class main extends PluginBase  {
 				});
 
 				for(var x = 0; x < CheckData.length; x++){
-
 
 					if( CheckData[x] == true ){
 						var cell = sheet.getCell(user_point, x);
@@ -266,30 +240,8 @@ export class main extends PluginBase  {
 		}
 		// ここで削除
 		else if( deleteMemberFlag == true ){
-			await sheet.loadCells({
-				startRowIndex: 0, endRowIndex : sheet.rowCount,
-				startColumnIndex:id_point, 
-			});
-
-			//console.log( "sheet.columnCount " , sheet.rowCount );
-
-			var null_count = 0;
-			var user_point = -1;
-			for( var y = 0; y < sheet.rowCount ; y++ ){
-				if(null_count >= 5) break;
 				
-				var cell = sheet.getCell(y, id_point);
-
-				//console.log( "id " , oldMember.user.id );
-				//console.log( "cell " , cell.value );
-
-				if( String(oldMember.user.id) === String(cell.value) ) {
-					user_point = y;	
-					break;
-				}
-				null_count += 1;
-			}
-			//console.log( "user_point  " , user_point );
+			var user_point = await google.getUserPoint(sheet, id_point, oldMember.user.id);
 			if(user_point !== -1){
 				const rows = await sheet.getRows();
 				var row = rows[user_point-1];
@@ -298,10 +250,7 @@ export class main extends PluginBase  {
 			}
 
 		}
-
-		//sheet.save();
 		return true;
-
 	}
 
 

@@ -35,6 +35,36 @@ export async function check_tabel(config: Object , sheet: GoogleSpreadsheetWorks
 	return false;
 }
 
+export async function getUserPoint(sheet : GoogleSpreadsheetWorksheet, id_point : Number, UserID: string) {
+	var user_point = -1;
+
+	await sheet.loadCells({
+		startRowIndex: 0, endRowIndex : sheet.rowCount,
+		startColumnIndex:id_point, 
+	});
+	//console.log( "sheet.columnCount " , sheet.rowCount );
+
+	var null_count = 0;
+	for( var y = 0; y < sheet.rowCount ; y++ ){
+		if(null_count >= 5) break;
+		
+		var cell = sheet.getCell(y, id_point);
+
+		//console.log( "id " , oldMember.user.id );
+		//console.log( "cell " , cell.value );
+
+		if( String(UserID) === String(cell.value) ) {
+			user_point = y;	
+			break;
+		}
+		null_count += 1;
+	}
+
+	console.log( "user_point  " , user_point );
+	return user_point;
+}
+
+
 /*
 export async function DataDiff(CheckList: Array<Boolean>,data1: Array<String>, data2: Array<String>) :Promise<Array<Number>> {
 	var setPoint :Array<Number> = [];
