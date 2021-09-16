@@ -12,34 +12,20 @@ export async function getDocment(config: Object) : Promise<GoogleSpreadsheet>{
 }
 
 export async function check_tabel(config: Object , sheet: GoogleSpreadsheetWorksheet){
-<<<<<<< HEAD
-	console.log(sheet);
-=======
 	//console.log(sheet);
->>>>>>> ver1.0
 	await sheet.loadHeaderRow();
 	const rows = sheet.headerValues;
 
 	const labels = config["SheetIndex"].map(data => data.label );
 
-<<<<<<< HEAD
-	console.log(rows);
-	console.log(labels);
-=======
 	//console.log(rows);
 	//console.log(labels);
->>>>>>> ver1.0
 
 	var old_item = labels.filter(item => rows.indexOf(item) == -1);
 	var new_item = rows.filter(item => labels.indexOf(item) == -1);
 	
-<<<<<<< HEAD
-	console.log(old_item);
-	console.log(new_item);
-=======
 	//console.log(old_item);
 	//console.log(new_item);
->>>>>>> ver1.0
 
 	if( old_item.length === 0 && new_item.length === 0 ){
 		return true;
@@ -47,9 +33,6 @@ export async function check_tabel(config: Object , sheet: GoogleSpreadsheetWorks
 		return false;
 	}
 	return false;
-<<<<<<< HEAD
-}
-=======
 }
 
 export async function getUserPoint(sheet : GoogleSpreadsheetWorksheet, id_point : Number, UserID: string) {
@@ -92,4 +75,3 @@ export async function DataDiff(CheckList: Array<Boolean>,data1: Array<String>, d
 	}
 	return setPoint;
 }*/
->>>>>>> ver1.0

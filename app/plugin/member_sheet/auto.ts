@@ -11,10 +11,7 @@ import { GoogleSpreadsheet, GoogleSpreadsheetWorksheet } from 'google-spreadshee
 import * as google from './google_sheet'
 
 import * as channelSend from '../../util/channel_send';
-<<<<<<< HEAD
-=======
 import { sheets } from 'googleapis/build/src/apis/sheets';
->>>>>>> ver1.0
 
 export class main extends PluginBase  {
 	
@@ -47,11 +44,7 @@ export class main extends PluginBase  {
 	}
 
 	async ready(client: Discord.Client, config: Object){
-<<<<<<< HEAD
-		super.ready(client, config);
-=======
 		await super.ready(client, config);
->>>>>>> ver1.0
 		//console.log("run memberSheet interactive!");
 	}
 
@@ -70,14 +63,11 @@ export class main extends PluginBase  {
 		// ------------
 
 		var setData = new Array( config["SheetIndex"].length );
-<<<<<<< HEAD
-=======
 		var CheckData = new Array( config["SheetIndex"].length );
 		for(var d = 0; d < setData.length ;d++){
 			setData[d] = "";
 			CheckData[d] = false;
 		}
->>>>>>> ver1.0
 
 		// role
 		var old_member_role = oldMember.roles.cache.map(role => role.id);
@@ -85,74 +75,24 @@ export class main extends PluginBase  {
 
 		// 編集する必要があるメンバーか？
 		//   ついでに、ロール処理もしておく。
-<<<<<<< HEAD
-		var hitFlag = true;
-		var newMemberFlag = false;
-		var deleteMemberFlag = false;
-=======
 		var newMemberFlag = false;
 		var deleteMemberFlag = false;
 
 		var RoleHitCount = 0;
 		var old_RoleHitCount = 0;
 
->>>>>>> ver1.0
 		for( var index of this.tabel_discordDataPoint["discord.Member.role"] ){
 			var old_item = old_member_role.filter(item => config["SheetIndex"][index]["roles"].indexOf(item) == -1);
 			var new_item = new_member_role.filter(item => config["SheetIndex"][index]["roles"].indexOf(item) == -1);
 
-<<<<<<< HEAD
-=======
 			//console.log(config["SheetIndex"][index]["roles"]);
 			//console.log(index);
 			//console.log(new_item);
 			/*
->>>>>>> ver1.0
 			if( old_item.length === 0 ){
 				newMemberFlag = true;
 			}else if( new_item.length === 0 ){
 				deleteMemberFlag = true;
-<<<<<<< HEAD
-			}
-
-			if( new_item.length !== 0 ){
-				setData[index] = "〇";
-			}else{
-				setData[index] = "";
-			}
-
-			if( old_item.length !== 0 || new_item.length !== 0 ){
-				hitFlag = true;
-			}			
-		}
-		if( !hitFlag ) return false;
-
-
-		// displayName
-		if(oldMember.displayName != newMember.displayName){
-			for( var index of this.tabel_discordDataPoint["discord.Member.display_name"] ){
-				setData[index] = newMember.displayName;
-			}
-		}
-		// name
-		if(oldMember.user.username != newMember.user.username){
-			for( var index of this.tabel_discordDataPoint["discord.Member.name"] ){
-				setData[index] = newMember.user.username;
-			}
-		}
-		// discriminator
-		if(oldMember.user.discriminator != newMember.user.discriminator){
-			for( var index of this.tabel_discordDataPoint["discord.Member.discriminator"] ){
-				setData[index] = newMember.user.discriminator;
-			}
-		}
-		// discriminator
-		if(oldMember.user.id != newMember.user.id){
-			for( var index of this.tabel_discordDataPoint["discord.Member.id"] ){
-				setData[index] = newMember.user.id;
-			}
-		}
-=======
 			}*/
 
 			if( new_item.length !== new_member_role.length ){
@@ -236,7 +176,6 @@ export class main extends PluginBase  {
 		//}
 
 		console.log("setData  " , setData);
->>>>>>> ver1.0
 
 		/// ----------------
 		// * シート書き込み	
@@ -265,43 +204,6 @@ export class main extends PluginBase  {
 		var id_point = this.tabel_discordDataPoint["discord.Member.id"][0];
 
 		// 既にあるユーザ検索して、操作。
-<<<<<<< HEAD
-		if( newMemberFlag == false && deleteMemberFlag == false ){
-
-			var user_point = -1;
-
-			sheet.loadCells({
-				RowIndex: id_point,
-				startColumnIndex:0, endColumnIndex: sheet.columnCount
-			});
-
-			for( var i = 0; i < sheet.columnCount ; i++ ){
-				var cell = sheet.getCell(id_point, i);
-				if(oldMember.user.id === cell.value) {
-					user_point = i;	
-					break;
-				}
-			}
-
-			// ここにカキコする処理を書く。
-			if(user_point == -1) newMemberFlag = true;
-			else{
-
-			}
-		}
-		if ( newMemberFlag == true ){
-
-		}
-		else if( deleteMemberFlag == true ){
-
-		}
-
-
-
-		sheet.save();
-		return true;
-
-=======
 		if( newMemberFlag === false && deleteMemberFlag === false ){
 
 			var user_point = await google.getUserPoint(sheet, id_point, oldMember.user.id);
@@ -349,21 +251,12 @@ export class main extends PluginBase  {
 
 		}
 		return true;
->>>>>>> ver1.0
 	}
 
 
 	async guildMemberUpdate(client: Discord.Client, config: Object, oldMember:Discord.GuildMember, newMember:Discord.GuildMember ){
 		//console.log("run guildMemberUpdate interactive!");
-<<<<<<< HEAD
-		console.log(  oldMember.displayName , " => " , newMember.displayName );
-
 		this.MemberDataUp(client, config, oldMember, newMember);
-
-
-=======
-		this.MemberDataUp(client, config, oldMember, newMember);
->>>>>>> ver1.0
 	}
 
 }
