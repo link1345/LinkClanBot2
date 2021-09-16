@@ -1,0 +1,117 @@
+
+## ---------------------------------------------
+## ---- Configure to your environment. ---------
+## ---------------------------------------------
+
+#  -- RoleID_List format
+# "rolename" : '&Runk"number"_Role' 'SystemID' 
+#   'Rolename' may be used in the Bot program for a variety of notations.
+#   It is recommended that you enter the appropriate value for your environment.
+# &Runk"number"_Role 
+#   To use the values around, '&Runk"number"_Role' will be used. Put in any character you like.
+RoleID_List: 
+ 仮入隊 : &Runk1_Role '000000000000000000'
+ 正隊員 : &Runk2_Role '000000000000000000'
+ 幹部 : &Runk3_Role '000000000000000000'
+
+#  -- Channel_List format
+# "Channelname" : '&Runk"number"_Channel' 'SystemID'
+#   'Channelname' may be used in the Bot program for a variety of notations.
+#   It is recommended that you enter the appropriate value for your environment.
+# &Runk"number"_Channel
+#   To use the values around, '&Runk"number"_Channel' will be used. Put in any character you like.
+ChannelID_List:
+ 一般 : &Runk1_Channel '000000000000000000'
+ 上位 : &Runk2_Channel '000000000000000000'
+
+
+#  -- Periodic_output_Channel 
+#    It is used to output logs on a regular basis.
+#  -- format
+# Periodic_output_Channel: 'ChannelID'
+#    It is easier to put the values you set in 'ChannelID_List' here.
+Periodic_output_Channel:
+ - *Runk1_Channel
+
+Periodic_output_Role:
+ - *Runk1_Role
+ - *Runk2_Role
+ - *Runk3_Role
+
+
+## ---------------------------------------------
+## ---------------------------------------------
+
+
+plugin_folder: "voice_log"
+module:
+ - auto
+ - interactive
+
+output_TimeLine_folderpath: "./analyze/voice_log/raw/"
+
+output_TimeLine_filepath: "./analyze/voice_log/raw/now.yml"
+
+
+processed_output_TimeLine_folderpath: "./analyze/voice_log/proc/"
+
+
+
+## slashCommand Data
+## ---------------------------
+# https://discord.com/developers/docs/interactions/application-commands#slash-commands
+## ---------------------------
+slashCommand :
+ - name : 'admin-voicelog'
+   description : '[管理者]ボイスチャンネル参加時間を記録ログを出力します。'
+   type : 1
+   default_permission : 'false'
+   options :
+    - name : 'month'
+      description : "何月まで欲しいですか？"
+      type : 3
+      required : true
+      choices :
+      - name : 'ping1-1'
+        value : "0"
+      - name : 'ping1-2'
+        value : "1"
+      - name : 'ping1-3'
+        value : "2"
+    - name : "format"
+      description : 'フォーマットはどうしますか？'
+      type : 3
+      required : true
+      choices :
+      - name : 'csv形式'
+        value : "csv"
+      - name : 'yml形式(raw)'
+        value : "raw"
+
+ - name : 'user-voicelog'
+   description : '今月のボイスチャンネル参加時間をチェックします。'
+   type : 1
+   default_permission : 'false'
+
+ - name : 'init-command-voicelog'
+   description : '[メンテ用]voicelogの初期化コマンド'
+   type : 1
+   default_permission : 'false'
+
+slashCommand_permissions :
+ - name : 'admin-voicelog'
+   option :
+   - id : *Runk3_Role
+     type : 'ROLE'
+     permission : true
+ - name : 'user-voicelog'
+   option :
+   - id : *Runk2_Role
+     type : 'ROLE'
+     permission : true
+
+ - name : "init-command-voicelog"
+   option :
+   - id : *Runk3_Role
+     type : 'ROLE'
+     permission : true
