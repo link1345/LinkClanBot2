@@ -21,15 +21,13 @@ export class main extends PluginBase  {
 	async ready(client: Discord.Client, config: Object){
 		await super.ready(client, config);
 		await init_Set_SheetCommand(PluginBase.commandList, config, 'admin-edit-memberlist');
-		// ここで追加して、このコマンドでは、ユーザー指定が必要であるという旨を書く。
 	}
 
 	async interactionCreate(client: Discord.Client, config: Object, interaction: Discord.Interaction){
 		if (!interaction.isCommand()) return;
 
 		if( interaction.commandName === "admin-edit-memberlist" ){
-			/// 下の奴だけだと、書いた本人が名乗ると言う形になってしまうので、細工して。
-			//await eSheet.EditSheet(client, config, interaction.user, interaction);
+			await eSheet.EditSheet(client, config, interaction.options.get("user").user , interaction);
 		}
 	}
 

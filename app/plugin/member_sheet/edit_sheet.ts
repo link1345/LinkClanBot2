@@ -37,7 +37,7 @@ export async function EditSheet(client: Discord.Client, config: Object, editUser
 		var indexPoint = getType("text",config["SheetIndex"]);
 		var IDPoint = getType("discord.Member.id",config["SheetIndex"]);
 		if ( IDPoint == null ) {
-			interaction.reply("【ERROR】なんか名簿がおかしいみたい。管理者に相談してね！");
+			await interaction.reply("【ERROR】なんか名簿がおかしいみたい。管理者に相談してね！");
 			return false;
 		};
 
@@ -66,7 +66,7 @@ export async function EditSheet(client: Discord.Client, config: Object, editUser
 		// 既にあるユーザ検索して、操作。
 		var user_point = await google.getUserPoint(sheet, id_point , editUser.id);
 		if(user_point == -1){
-			interaction.reply("【ERROR】" + editUser.username + "#" + editUser.discriminator + "さんは名簿に存在しないみたい...。管理者に相談してね！");
+			await interaction.reply("【ERROR】" + editUser.username + "#" + editUser.discriminator + "さんは名簿に存在しないみたい...。管理者に相談してね！");
 			return false;
 		}
 
@@ -86,7 +86,7 @@ export async function EditSheet(client: Discord.Client, config: Object, editUser
 		}
 		await sheet.saveUpdatedCells();
 		
-		interaction.reply("【報告】" + editUser.username + "#" + editUser.discriminator + "さんのデータを更新したよ！乙！");
+		await interaction.reply("【報告】" + editUser.username + "#" + editUser.discriminator + "さんのデータを更新したよ！乙！");
 	}catch(error){
 		console.log(error);
 	}
