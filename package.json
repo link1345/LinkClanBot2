@@ -12,12 +12,21 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@discordjs/builders": "^0.6.0",
     "@discordjs/rest": "^0.1.0-canary.0",
     "@discordjs/voice": "^0.6.0",
     "@types/node": "^16.7.5",
+    "bufferutil": "^4.0.3",
+    "danfojs-node": "^0.2.8",
     "discord-api-types": "^0.22.0",
     "discord.js": "^13.1.0",
-    "js-yaml": "^4.1.0"
+    "google-spreadsheet": "^3.1.15",
+    "googleapis": "^85.0.0",
+    "js-yaml": "^4.1.0",
+    "node-cron": "^3.0.0",
+    "utf-8-validate": "^5.0.5",
+    "xlsx": "^0.17.1",
+    "zlib-sync": "^0.1.7"
   },
   "devDependencies": {
     "typescript": "^4.4.2"

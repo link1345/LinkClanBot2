@@ -1,0 +1,164 @@
+
+## ---------------------------------------------
+## ---- Configure to your environment. ---------
+## ---------------------------------------------
+
+#  -- RoleID_List format
+# "rolename" : '&Runk"number"_Role' 'SystemID' 
+#   'Rolename' may be used in the Bot program for a variety of notations.
+#   It is recommended that you enter the appropriate value for your environment.
+# &Runk"number"_Role 
+#   To use the values around, '&Runk"number"_Role' will be used. Put in any character you like.
+RoleID_List: 
+ 仮入隊 : &Runk1_Role '000000000000000000'
+ 正隊員 : &Runk2_Role '000000000000000000'
+ 幹部 : &Runk3_Role '000000000000000000'
+
+#  -- Channel_List format
+# "Channelname" : '&Runk"number"_Channel' 'SystemID'
+#   'Channelname' may be used in the Bot program for a variety of notations.
+#   It is recommended that you enter the appropriate value for your environment.
+# &Runk"number"_Channel
+#   To use the values around, '&Runk"number"_Channel' will be used. Put in any character you like.
+ChannelID_List:
+ 一般 : &Runk1_Channel '000000000000000000'
+ 上位 : &Runk2_Channel '000000000000000000'
+
+# シートのID
+GOOGLE_SPREADSHEET_KEY: '-------------------------------------------'
+SPREADSHEET_URL: "-------------------------------------------"
+
+# シートの認証ファイル(json)
+credentials_filepath: "./config/plugin/-------------------------------------------.json"
+
+# -- GoogleSheet 
+# Column list
+SheetIndex:
+   flag: "active"
+ - type: "text"
+   label: "呼び名"
+   name: "call_name"
+   description: "呼び名"
+   flag: "active"
+ - type: "text"
+   label: "OriginID"
+   name: "origin_id"
+   description: "OriginID"
+ - type: "discord.Member.role"
+   label: "役職:幹部"
+   name: "role1"
+   AddMessage: "さんが幹部になりました。称えよ！…よ…よ？"
+   DeleteMessage: ""
+   roles:
+    - *Runk3_Role
+ - type: "discord.Member.role"
+   label: "役職:正隊員"
+   name: "role2"
+   AddMessage: "さんが正隊員になりました。(∩´∀｀)∩ﾜｰｲ"
+   DeleteMessage: "さんが除隊しました。"
+   roles:
+    - *Runk2_Role
+ - type: "discord.Member.role"
+   label: "役職:仮入隊"
+   name: "role3"
+   AddMessage: "さんが仮入隊しました。（ ＾ω＾）"
+   DeleteMessage: "さんが入隊希望を取り消しました。"
+   roles:
+    - *Runk1_Role
+ - type: "discord.Member.id" 
+   label: "Discord ID"
+   name: "discord_id"
+ - type: "discord.Member.display_name"
+   label: "Discord\nDisplayName"
+   name: "discord_displayname"
+ - type: "discord.Member.name"
+   label: "Discord\nName"
+   name: "discord_name"
+ - type: "discord.Member.discriminator"
+   label: "Discord\ndiscriminator"
+   name: "discord_discriminator"
+ - type: "text"
+   label: "steam\nユーザー名"
+   name: "steam_name"
+   description: "Steamユーザー名"
+ - type: "text"
+   label: "Uplay(Ubisoft)\nユーザー名"
+   name: "uplay_name"
+   description: "Uplay(Ubisoft)のユーザー名"
+ - type: "text"
+   label: "BATTEL.NET\nBattleTag"
+   name: "battel_net"
+   description: "BATTEL.NETのBattleTag"
+ - type: "text"
+   label: "epicgames\nディスプレイネーム"
+   name: "epicgames"
+   description: "epicgamesのディスプレイネーム"
+ - type: "text"
+   label: "XBOX\nゲーマータグ"
+   name: "xbox"
+   description: "XBOXのゲーマータグ"
+ - type: "text"
+   label: "PlayStation ID"
+   name: "play_station"
+   description: "PlayStation ID"
+ - type: "text"
+   label: "Twitter\nアカウントURL"
+   name: "twitter_url"
+   description: "TwitterアカウントURL"
+
+# シートを上位権限で変更できるロールIDは？
+SheetAdminRoleID :
+ - *Runk3_Role
+
+# シート自動更新機能動作時、不具合があったときのエラーログ出力チャンネルは？
+AutoEvent_ERRORMessage_channelID :
+ - *Runk2_Channel
+ 
+# 一般情報メッセージチャンネル
+AutoEvent_Message_channelID :
+ - *Runk1_Channel
+
+## ---------------------------------------------
+## ---------------------------------------------
+
+plugin_folder: "member_sheet"
+module:
+ - auto
+ - interactive_user
+ - interactive_admin
+
+
+## slashCommand Data
+## ---------------------------
+# https://discord.com/developers/docs/interactions/application-commands#slash-commands
+## ---------------------------
+#
+# edit-memberlist と admin-edit-memberlist のoptionsについて...
+#  readyEventにおいて、SheetIndexのtype:text一覧を自動に取得し、設定できるように細工をしている。
+slashCommand :
+ - name : 'edit-memberlist'
+   description : '自分の名簿情報を変更します。'
+   type : 1
+   default_permission : 'false'
+ - name : 'admin-edit-memberlist'
+   description : '[管理者]名簿情報を変更します。'
+   type : 1
+   default_permission : 'false'
+   options :
+    - name : 'user'
+      description : '誰の情報を書き換えますか？'
+      type : 6
+      required : true
+
+slashCommand_permissions :
+ - name : "edit-memberlist"
+   option :
+   - id : *Runk2_Role
+     type : 'ROLE'
+     permission : true
+ - name : "admin-edit-memberlist"
+   option :
+   - id : *Runk3_Role
+     type : 'ROLE'
+     permission : true
+

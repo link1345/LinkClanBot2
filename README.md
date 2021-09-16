@@ -10,3 +10,7 @@ Features include :
 + MemberList (GoogleSheet)
 
 # under development
+
+# memo
+
+* TSでビルドしますが、 danfojs-node が TS1016 を吐いて死ぬので、mode-modulesの中にあるdanfojs-nodeのtypesフォルダを、読み込めないようにリネームすることをお勧めする。

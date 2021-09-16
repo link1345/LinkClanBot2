@@ -1,43 +1,49 @@
-import { copyFileSync } from "fs";
+//import { copyFileSync } from "fs";
+//import { eventNames } from "process";
 
+import {REST} from '@discordjs/rest';
+import {Routes} from 'discord-api-types/v9';
 
-const EventEmitter = require('events').EventEmitter;
+//const { Client, Intents, Interaction } = require('discord.js');
+import {Client, Intents} from 'discord.js';
 
-const { REST } = require('@discordjs/rest');
-const { Routes } = require('discord-api-types/v9');
+import * as yaml from 'js-yaml';
+import * as fs from 'fs';
 
-const { Client, Intents } = require('discord.js');
-
-const yaml = require('js-yaml');
-const fs   = require('fs');
+import {EventList} from './event';
 
 export class AppManager {
-	client: typeof Client;
+	client: Client;
 
-	rest: typeof REST;
+	rest: REST;
 
 	base_doc: Object;
 	slashCommands: Array<Object>;
 
 	moduleList: Array<Object>;
 
-	constructor(targetDirectory) {
+	constructor() {
 
 		this.base_doc = yaml.load(fs.readFileSync('./config/base.yml', 'utf8'));
 
-		this.slashCommands = [];
+		//this.slashCommands = [];
 		
 		this.rest = new REST({ version: '9' }).setToken(this.base_doc["TOKEN"]);
 
-		this.client = new Client({ intents: [Intents.FLAGS.GUILDS] });
+		this.client = new  Client({ intents: [ 
+			Intents.FLAGS.GUILDS,
+			Intents.FLAGS.GUILD_PRESENCES,  
+			Intents.FLAGS.GUILD_MEMBERS, 
+			Intents.FLAGS.GUILD_MESSAGES,
+			Intents.FLAGS.GUILD_VOICE_STATES,
+		] });
 
 		this.moduleList = [];
 	}
 
-	async Oneload(path: String){
+	async Oneload(path: string){
 
 		const files = await fs.promises.readdir(path);
-		 
 
 		var pluginData = {};
 		//console.log(files)
@@ -51,28 +57,24 @@ export class AppManager {
 			// モジュール作業
 			if ( "module" in pluginItemData["config"] && "plugin_folder" in pluginItemData["config"] ) {
 				// hit!
-				pluginItemData["config"]["module"].forEach(function(item, index, array) {
+				for( var item of pluginItemData["config"]["module"] ) {
 					var func_text : string = __dirname + "/../plugin/" + pluginItemData["config"]["plugin_folder"] + "/" + item ;
 					//console.log("func path: " , func_text)
 					pluginItemData["object"][func_text] = {}
 					pluginItemData["object"][func_text]["func"] = require(func_text)["main"];
 					//console.log("func: " , pluginItemData["object"][func_text] );
-					pluginItemData["object"][func_text]["obj"] =  new pluginItemData["object"][func_text]["func"]() ;
-				});
+					pluginItemData["object"][func_text]["obj"] =  new pluginItemData["object"][func_text]["func"](this.client, pluginItemData["config"], this.base_doc, this.rest) ;
+
+				}
 			}
 
 			if( Object.keys(pluginItemData["object"]).length != 0 ){
 				this.moduleList.push( pluginItemData );
 			}
 
-			// ついでに、slashCommandも観ておく
-			if ( "slashCommand" in pluginItemData["config"] ){
-				this.slashCommands = this.slashCommands.concat( pluginItemData["config"]["slashCommand"] );
-			}
 		});
 		
 		//console.log(this.moduleList)
-		console.log("check! " , this.slashCommands);
 	}
 
 	async load(){
@@ -82,54 +84,86 @@ export class AppManager {
 	}
 
 
-	async init_SlashCommands(){
-		try {
-			console.log('Started refreshing application (/) commands.');
-			
+	run_func = async<T extends readonly any[]>( eventName:string, module: Object[], client: Client, data:[...T] ) => {
+		
+		// コマンド初期化
+		if(eventName === "ready"){
 			await this.rest.put(
 				Routes.applicationGuildCommands(this.base_doc["CLIENT_ID"], this.base_doc["GUILD_ID"]),
-				{ body: this.slashCommands },
+				{ body: [] },
 			);
-			
-			console.log('Successfully reloaded application (/) commands.');
-		} catch (error) {
-			console.error(error);
 		}
-	}
+		
+		for(let item of module){
+			
+			for( let obj_key of Object.keys( item["object"] ) ){
 
-	async run(){
-
-		const run_func = async<T extends readonly any[]>( eventName:string,module: Object[], client, data:[...T] ) => {
-			for(let item of module){
+				//console.log( "Event:" ,  eventName , ", Name:" , obj_key);
+				if( item["object"][obj_key]["obj"][eventName] == null ) continue;
+				try {
+					//console.log("start!  obj_key " , obj_key , "   eventName " , eventName, "   : " , item["object"][obj_key]["obj"][eventName] );
+					( await item["object"][obj_key]["obj"][eventName](client, item["config"], ...data) );				
+					//console.log("end!  obj_key " , obj_key , "   eventName " , eventName);
 				
-				for( let obj_key of Object.keys( item["object"] ) ){
-					try {
-						await item["object"][obj_key]["obj"][eventName](client, item, data);
-					}catch(error) {
-						if (error instanceof TypeError){
-							// 関数がない場合の処理
-							//console.log( "TypeError  Event:" ,  eventName , ", Name:" , obj_key);
-						}else{				
-							console.log(error);
-						}
+				}catch(error) {
+					if (error instanceof TypeError){
+						// 関数がない場合の処理
+						//console.log( "TypeError  Event:" ,  eventName , ", Name:" , obj_key);
+					}else{				
+						console.log(error);
 					}
 				}
 			}
 		}
+	}
+
+	run(){
+
+		// ------------------------------------------------------------------------------
+		// -----  EVENT  ----------------------------------------------------------------
+		// ---------- https://discord.js.org/#/docs/main/stable/class/Client ------------
+		// ------------------------------------------------------------------------------
+
+		const eventRun = async<T extends readonly any[]>( eventName:string, data:[...T]) => {
+			const _e = async<T extends readonly any[]> (...data:[...T]) => {
+				await this.run_func( eventName, this.moduleList , this.client , data);
+			}
+			this.client.on(eventName, _e );
+		}
 		
-		this.client.on('ready', async client => {
-			console.log(`Logged in as ${this.client.user.tag}!`);
-			//console.log( this.moduleList )
-			await run_func( "ready", this.moduleList , this.client , client);
-		});
+		//console.log( EventList ) ;
 		
-		this.client.on('interactionCreate', async interaction => {
-			//console.log("id : " , interaction.commandId )
-
-			await run_func( "interactionCreate", this.moduleList , this.client , interaction);
-
-		});		
-
+		for( let obj_key of Object.keys( EventList ) ){
+			var eventitem = [];
+			for( let item in EventList[obj_key] ){
+				if( item == "Date" ){
+					eventitem.push( Date );
+	
+				}else if( item == "string" ){
+					eventitem.push( NaN );
+	
+				}else if( item == "any" ){
+					eventitem.push( NaN );
+	
+				}else{
+					eventitem.push( require('discord.js')[EventList[obj_key][item]] );
+					//console.log( EventList[obj_key] );
+				}	
+			}
+			//console.log(obj_key , " => " , eventitem );
+			eventRun(obj_key ,  eventitem );
+		}
+		
 		this.client.login( this.base_doc["TOKEN"] );
+	}
+
+	async exit(){
+		// 各プラグインで、終了処理を行うように指令を出す。
+		await this.run_func( "exit", this.moduleList , this.client , []); 
+		// Botログアウト
+		this.client.destroy();
+		
+		console.log(" ---------- ボット終了するぜー！ ----------");
+		process.exit(0);
 	}
 }

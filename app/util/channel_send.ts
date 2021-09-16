@@ -11,4 +11,17 @@ export async function ChannelList(client: Discord.Client, channelID: Array<Strin
 		channel_list.push( client.channels.cache.get( item.toString() ) as Discord.TextChannel );
 	}
    	return channel_list;
+<<<<<<< HEAD
+=======
+}
+
+export function text_check(text: string): string{
+	text = text.replace("/_/g",'\_');
+	text = text.replace("/*/g","\*");
+	text = text.replace("/~/g","\~");
+	text = text.replace("/|/g","\|");
+	text = text.replace("/`/g","\`");
+	text = text.replace("/>/g","\>");
+	return text;
+>>>>>>> ver1.0
 }
