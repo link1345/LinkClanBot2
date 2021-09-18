@@ -139,11 +139,11 @@ slashCommand :
  - name : 'edit-memberlist'
    description : '自分の名簿情報を変更します。'
    type : 1
-   default_permission : 'false'
+   defaultPermission : false
  - name : 'admin-edit-memberlist'
    description : '[管理者]名簿情報を変更します。'
    type : 1
-   default_permission : 'false'
+   defaultPermission : false
    options :
     - name : 'user'
       description : '誰の情報を書き換えますか？'
