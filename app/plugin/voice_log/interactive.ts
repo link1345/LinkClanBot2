@@ -10,6 +10,10 @@ import * as chart from './chart';
 import { copyFileSync } from 'fs';
 
 import * as dfd from 'danfojs-node';
+import { chat } from 'googleapis/build/src/apis/chat';
+
+
+import * as channelSend from '../../util/channel_send';
 
 export class main extends PluginBase {
 
@@ -172,6 +176,34 @@ export class main extends PluginBase {
 				}
 			}
 
+		}
+		else if (interaction.commandName === 'user-voicelog'){
+			
+			await interaction.reply("**【報告】**処理中です。ちょっと待っててね！");
+
+			try{
+
+			if( interaction.inGuild() == true ){
+				var timeData = await chart.one_MakeTimeList( client,  config["output_TimeLine_filepath"] , [ interaction.member as Discord.GuildMember ]);
+				//timeData = timeData.drop({ columns: ["name"], axis: 1, inplace: true });
+				console.log("timeData" , timeData.values);
+				var user_time = timeData.values[0][2];
+				var round_user_time = Math.round(user_time * 100) / 100;
+
+				if( user_time == null || user_time <= 0.0 ){
+					await interaction.editReply( "**【報告】**どうやらボイスチャンネルに参加したことがないみたいです。" );
+				}else if( round_user_time <= 0.0 ){					
+					await interaction.editReply( "**【報告】**ボイスチャンネル参加時間時間短すぎ！\n  (" + String(user_time) + "時間)" );
+				}else{
+					await interaction.editReply("**【報告】**" + channelSend.text_check(interaction.user.username) + "#" + channelSend.text_check(interaction.user.discriminator) + "さんの参加時間は…**" + String(round_user_time) + "時間** です。" ); 
+				}
+
+			}else{
+				await interaction.editReply("**【ERROR】**このコマンドは、使用できません。");
+			}
+			}catch(error){
+				console.log(error);
+			}
 		}
 
 
