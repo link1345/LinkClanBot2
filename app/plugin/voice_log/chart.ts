@@ -57,7 +57,7 @@ export async function table_MakeTimeList(client: Discord.Client, MonthFileList: 
 
 	var all_df: dfd.DataFrame = null;
 	for( var fileName of MonthFileList ){
-		var df : dfd.DataFrame = await one_MakeTimeList(client,fileName, RoleList, members);
+		var df : dfd.DataFrame = await one_MakeTimeList(client,fileName, members);
 
 		if ( df == null){
 			break;
@@ -115,10 +115,10 @@ export async function UserRoleMember( client: Discord.Client, RoleList: Array<St
 
 export async function MakeTimeList( client: Discord.Client, Datafile_path: string , RoleList: Array<String> ) :  Promise<dfd.DataFrame>{
 	var members = await UserRoleMember(client, RoleList);
-	return await one_MakeTimeList(this.fix_client, Datafile_path,this.config["Periodic_output_Role"], members);
+	return await one_MakeTimeList(this.fix_client, Datafile_path, members);
 }
 
-export async function one_MakeTimeList( client: Discord.Client, Datafile_path: string , RoleList: Array<String>, members : Array<Discord.GuildMember>  ) :  Promise<dfd.DataFrame>{
+export async function one_MakeTimeList( client: Discord.Client, Datafile_path: string , members : Array<Discord.GuildMember>  ) :  Promise<dfd.DataFrame>{
 
 	// ユーザーリスト取得
 	//var members = await UserRoleMember(client, RoleList);
@@ -141,6 +141,10 @@ export async function one_MakeTimeList( client: Discord.Client, Datafile_path: s
 		'exit': new Array( members_id.length ),
 		'time': new Array( members_id.length ),
 	};
+
+	for(var item of return_data["time"]){
+		item = 0;
+	}
 
 	//console.log("return => " , return_data);
 

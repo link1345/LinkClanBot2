@@ -15,7 +15,13 @@ Features include :
 
 # Install
 
-``` npm install ```
+npmのバージョンは、discord.js基準です。
+現在は、**npm 16.6** です。
+
+```
+npm install -g typescript
+npm install
+```
 
 # Run
 

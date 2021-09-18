@@ -65,7 +65,7 @@ slashCommand :
  - name : 'admin-voicelog'
    description : '[管理者]ボイスチャンネル参加時間を記録ログを出力します。'
    type : 1
-   default_permission : 'false'
+   defaultPermission : false
    options :
     - name : 'month'
       description : "何月まで欲しいですか？"
@@ -91,12 +91,12 @@ slashCommand :
  - name : 'user-voicelog'
    description : '今月のボイスチャンネル参加時間をチェックします。'
    type : 1
-   default_permission : 'false'
+   defaultPermission : false
 
  - name : 'init-command-voicelog'
    description : '[メンテ用]voicelogの初期化コマンド'
    type : 1
-   default_permission : 'false'
+   defaultPermission : false
 
 slashCommand_permissions :
  - name : 'admin-voicelog'
