@@ -6,7 +6,10 @@ import * as Discord from 'discord.js';
 import { GoogleSpreadsheet, GoogleSpreadsheetWorksheet } from 'google-spreadsheet';
 import * as google from './google_sheet'
 
+import * as fChannle from '../../util/channel_send';
+
 import {getType} from './interactive';
+import { send } from 'process';
 
 function discordDataPoint(config){
 	var discord_list = [
@@ -34,6 +37,8 @@ function discordDataPoint(config){
 
 export async function EditSheet(client: Discord.Client, config: Object, editUser: Discord.User, interaction: Discord.CommandInteraction){
 	try{
+		interaction.reply("【報告】名簿編集中...");
+
 		var indexPoint = getType("text",config["SheetIndex"]);
 		var IDPoint = getType("discord.Member.id",config["SheetIndex"]);
 		if ( IDPoint == null ) {
@@ -66,7 +71,7 @@ export async function EditSheet(client: Discord.Client, config: Object, editUser
 		// 既にあるユーザ検索して、操作。
 		var user_point = await google.getUserPoint(sheet, id_point , editUser.id);
 		if(user_point == -1){
-			await interaction.reply("【ERROR】" + editUser.username + "#" + editUser.discriminator + "さんは名簿に存在しないみたい...。管理者に相談してね！");
+			await interaction.reply("【ERROR】" + fChannle.text_check(editUser.username) + "#" + fChannle.text_check(editUser.discriminator) + "さんは名簿に存在しないみたい...。管理者に相談してね！");
 			return false;
 		}
 
@@ -86,7 +91,26 @@ export async function EditSheet(client: Discord.Client, config: Object, editUser
 		}
 		await sheet.saveUpdatedCells();
 		
-		await interaction.reply("【報告】" + editUser.username + "#" + editUser.discriminator + "さんのデータを更新したよ！乙！");
+
+		var send_embed : Discord.MessageEmbed = new Discord.MessageEmbed() ;
+		send_embed.setTitle("【設定されたデータ】");
+		send_embed.setURL(config["SPREADSHEET_URL"]);
+		send_embed.setDescription(fChannle.text_check(editUser.username) + "#" + fChannle.text_check(editUser.discriminator) + "さんのデータ情報");
+		for( var index of indexPoint ){
+			
+			var item = valueList[index];
+			if ( valueList[index] == null || valueList[index] == "" ){
+				item = "( undefined )";
+			}
+			send_embed.addField( config["SheetIndex"][index]["description"], item);
+		}
+
+		var ReplyMessage : Discord.WebhookEditMessageOptions = {
+			content: "【報告】" + fChannle.text_check(editUser.username) + "#" + fChannle.text_check(editUser.discriminator) + "さんのデータを更新したよ！乙！",
+			embeds:[ send_embed ]
+		}
+
+		await interaction.editReply( ReplyMessage );
 	}catch(error){
 		console.log(error);
 	}

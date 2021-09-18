@@ -122,11 +122,14 @@ export class main extends PluginBase  {
 			}
 			// 剥奪
 			else if( new_item.length === new_member_role.length &&  old_item.length !== old_member_role.length ){
-				var text : string = "【自動通知】" + channelSend.text_check(newMember.displayName) + config["SheetIndex"][index]["DeleteMessage"] ;
-				text = channelSend.text_check(text);
 
-				for( var item of await channelSend.ChannelList(client, config["AutoEvent_Message_channelID"]) ){
-					item.send({ content: text });
+				if( config["SheetIndex"][index]["DeleteMessage"] !== "" ){
+					var text : string = "【自動通知】" + channelSend.text_check(newMember.displayName) + config["SheetIndex"][index]["DeleteMessage"] ;
+					text = channelSend.text_check(text);
+
+					for( var item of await channelSend.ChannelList(client, config["AutoEvent_Message_channelID"]) ){
+						item.send({ content: text });
+					}
 				}
 			}
 

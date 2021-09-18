@@ -57,7 +57,10 @@ export async function getUserPoint(sheet : GoogleSpreadsheetWorksheet, id_point 
 			user_point = y;	
 			break;
 		}
-		null_count += 1;
+
+		if( String(cell.value) == "" || String(cell.value) == null ){
+			null_count += 1;
+		}
 	}
 
 	console.log( "user_point  " , user_point );
