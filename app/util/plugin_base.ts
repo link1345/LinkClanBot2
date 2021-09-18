@@ -82,7 +82,9 @@ export class PluginBase {
 			//console.log(command_item);
 
 			var sendItem : Discord.ApplicationCommandData = command_item;
-
+			
+			console.log("sendItem   " , sendItem);
+			
 			//await new Promise(resolve => setTimeout(resolve, 3 * 1000));
 			var rItem =  await this.fix_client.application.commands.create( sendItem, this.base_doc["GUILD_ID"] );
 			this.settingReturn_SlashCommands = this.settingReturn_SlashCommands.concat( rItem );
