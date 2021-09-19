@@ -26,9 +26,8 @@ export class main extends PluginBase  {
 	async interactionCreate(client: Discord.Client, config: Object, interaction: Discord.Interaction){
 		if (!interaction.isCommand()) return;
 		
-		if(!await channelSend.Command_permison_check(client, interaction, config)) return;
-
 		if( interaction.commandName === "admin-edit-memberlist" ){
+			if(!await channelSend.Command_permison_check(client, interaction, config)) return;
 			await eSheet.EditSheet(client, config, interaction.options.get("user").user , interaction);
 		}
 	}

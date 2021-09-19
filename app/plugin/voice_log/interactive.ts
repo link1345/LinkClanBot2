@@ -91,16 +91,16 @@ export class main extends PluginBase {
 	async interactionCreate(client: Discord.Client, config: Object, interaction: Discord.Interaction){
 		if (!interaction.isCommand()) return;
 
-		// 入力したコマンドが、configに書かれているチャンネル制限に掛っているか？
-		if(!await channelSend.Command_permison_check(client, interaction, config)) return;
-
-
 		if( interaction.commandName === "init-command-voicelog" ){
+			if(!await channelSend.Command_permison_check(client, interaction, config)) return;
+
 			await interaction.reply('[LOG] NowLoading');
 			if( await this.init_checkCommand(config)) await interaction.editReply("[SUCCESS]init Command!");
 			else await interaction.editReply("[ERROR] init Command!");
 		}
-		else if (interaction.commandName === 'admin-voicelog') {
+		else if (interaction.commandName === 'admin-voicelog') {		
+			if(!await channelSend.Command_permison_check(client, interaction, config)) return;
+
 			await interaction.reply('**【報告】**処理中です。ちょっと待っててね！');
 
 			//console.log( interaction.options.data ) ;
@@ -137,7 +137,8 @@ export class main extends PluginBase {
 
 		}
 		else if (interaction.commandName === 'user-voicelog'){
-			
+			if(!await channelSend.Command_permison_check(client, interaction, config)) return;
+
 			await interaction.reply("**【報告】**処理中です。ちょっと待っててね！");
 
 			try{

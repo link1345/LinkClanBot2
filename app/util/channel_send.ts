@@ -19,7 +19,6 @@ export function text_check(text: string): string{
 	text = text.replace(/\|/g,"\\\|");
 	text = text.replace(/`/g,"\\`");
 	text = text.replace(/>/g,"\\>");
-	console.log(text);
 	return text;
 }
 
