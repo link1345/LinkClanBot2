@@ -162,3 +162,12 @@ slashCommand_permissions :
      type : 'ROLE'
      permission : true
 
+slashCommand_channel_permisson :
+ - name : 'edit-memberlist'
+   defaultPermission : false
+   option : 
+    - id : *Runk1_Channel
+ - name : 'admin-edit-memberlist'
+   defaultPermission : false
+   option : 
+    - id : *Runk2_Channel

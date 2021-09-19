@@ -115,3 +115,18 @@ slashCommand_permissions :
    - id : *Runk3_Role
      type : 'ROLE'
      permission : true
+
+
+slashCommand_channel_permisson :
+ - name : 'admin-voicelog'
+   defaultPermission : false
+   option : 
+    - id : *Runk2_Channel
+ - name : 'user-voicelog'
+   defaultPermission : false
+   option : 
+    - id : *Runk1_Channel
+ - name : 'init-command-voicelog'
+   defaultPermission : false
+   option : 
+    - id : *Runk2_Channel

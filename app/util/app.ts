@@ -110,7 +110,7 @@ export class AppManager {
 						// 関数がない場合の処理
 						//console.log( "TypeError  Event:" ,  eventName , ", Name:" , obj_key);
 					}else{				
-						console.log(error);
+						console.error(error);
 					}
 				}
 			}

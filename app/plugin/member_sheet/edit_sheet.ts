@@ -112,7 +112,7 @@ export async function EditSheet(client: Discord.Client, config: Object, editUser
 
 		await interaction.editReply( ReplyMessage );
 	}catch(error){
-		console.log(error);
+		console.error(error);
 	}
 
 	return true;

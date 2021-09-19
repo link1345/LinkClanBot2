@@ -45,7 +45,7 @@ async function Edit_SheetCommand( SheetIndexList: Array<Object>, setting_command
 		}
 		//console.log( "Data[options] ===> ", Data["options"] );
 	}catch(error){
-		console.log(error);
+		console.error(error);
 	}
 	
 	if(Data["options"] == []) return;	

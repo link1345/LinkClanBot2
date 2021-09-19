@@ -6,10 +6,10 @@ import * as path from 'path';
 
 import {PluginBase} from '../../util/plugin_base';
 
-import * as google from './google_sheet'
-
 import * as eSheet from './edit_sheet'
 import {init_Set_SheetCommand} from './interactive';
+
+import * as channelSend from '../../util/channel_send';
 
 export class main extends PluginBase  {
 	
@@ -25,6 +25,8 @@ export class main extends PluginBase  {
 
 	async interactionCreate(client: Discord.Client, config: Object, interaction: Discord.Interaction){
 		if (!interaction.isCommand()) return;
+		
+		if(!await channelSend.Command_permison_check(client, interaction, config)) return;
 
 		if( interaction.commandName === "admin-edit-memberlist" ){
 			await eSheet.EditSheet(client, config, interaction.options.get("user").user , interaction);

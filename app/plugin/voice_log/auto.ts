@@ -54,8 +54,7 @@ export class main extends PluginBase {
 
 			console.log("OK");
 		}catch(error){
-			console.log("error");
-			console.log(error);
+			console.error(error);
 		}
 	}
 
@@ -84,8 +83,8 @@ export class main extends PluginBase {
 					console.log("【自動：" , text["time"] , "】" , text["member.name"], "さんが、" , text["after.channel.name"], "から" , text["before.channel.name"], "へ移動しました。" );
 				}
 			}catch(error){
-				console.log("ログを出力できませんでした。");
-				console.log(error);
+				console.error("ログを出力できませんでした。");
+				console.error(error);
 			}
 			
 
