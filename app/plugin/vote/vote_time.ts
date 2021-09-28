@@ -100,7 +100,7 @@ export async function setVote(client: Discord.Client, config: Object, interactio
 
 	const text_id = id_cheak(config, interaction);
 	if(text_id === ""){
-		await interaction.editReply({content:"【ERROR】１人が投票欄を作成できる個数を超えています(max:5)" });
+		await interaction.editReply({content:"**【ERROR】**１人が投票欄を作成できる個数を超えています(max:5)" });
 		return;
 	}
 	
@@ -136,10 +136,10 @@ export async function setVote(client: Discord.Client, config: Object, interactio
 
 	var choice_count = Number(interaction.options.get( 'choice_count' ).value);
 	if(choice_count <= 0){
-		await interaction.editReply({content:"【警告】選択できる個数が少なすぎるようです" });
+		await interaction.editReply({content:"**【警告】**選択できる個数が少なすぎるようです" });
 		return null;
 	}else if(choice_count > labels.length){
-		await interaction.editReply({content:"【警告】選択できる個数が多すぎるようです" });
+		await interaction.editReply({content:"**【警告】**選択できる個数が多すぎるようです" });
 		return null;
 	}
 
@@ -164,17 +164,20 @@ export async function setVote(client: Discord.Client, config: Object, interactio
 	var setTime = new Date();
 	setTime.setDate( setTime.getDate() + limit_time );
 	send_embed.setTimestamp(setTime);
+	send_embed.setColor('#0099ff');
 	send_embed.setFooter("投票締め切り日 … ");
 	
 	if( open_information === "none" ){
+		send_embed.addField('\u200B', '\u200B');
 	}else if( open_information === "count" ){
+		send_embed.addField('\u200B', '\u200B');
 		send_embed.addField("Count", channelSend.text_check("まだ誰も投票してません (´・ω・｀)") );
 	}else if( open_information === "all" ){
-		//send_embed.addField('\u200B', '\u200B');
+		send_embed.addField('\u200B', '\u200B');
 		var cound_userlist = [];
 		for(var label_item of labels){
-			//send_embed.addField(label_item, "[未投票]" );
-			var embed_item : Discord.EmbedFieldData = {"name": label_item, "value": "[未投票]"};
+			//send_embed.addField(label_item, "_[ NotVoted ]_" );
+			var embed_item : Discord.EmbedFieldData = {"name": label_item, "value": "_[ NotVoted ]_"};
 			cound_userlist.push(embed_item);
 		}
 		send_embed.addFields(cound_userlist);
@@ -249,7 +252,7 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 	if(value_subject_vote == null) return;
 
 	if( value_subject_vote["makeUserID"] !== interaction.user.id ){
-		await interaction.reply({content: "【ERROR】あなたは、この投票箱を作成した人ではないため、処理できませんでした。", ephemeral: true});
+		await interaction.reply({content: "**【ERROR】**あなたは、この投票箱を作成した人ではないため、処理できませんでした。", ephemeral: true});
 		return;
 	}
 
@@ -260,7 +263,7 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 
 	var message_m = await f_message(client, value_subject_vote);
 	if(message_m == null){
-		await interaction.reply({content: "【ERROR】編集するべきメッセージが見つかりませんでした", ephemeral: true});
+		await interaction.reply({content: "**【ERROR】**編集するべきメッセージが見つかりませんでした", ephemeral: true});
 		return;
 	}
 	//console.log("message_m  =>>> " , message_m);
@@ -272,14 +275,14 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 			await message_m.edit( Cast_MessageEditOptions(message_m) );
 			await init_VoteCommand_subject_vote(config);
 
-			await interaction.reply({content: "タイトルを編集しました", ephemeral: true});
+			await interaction.reply({content: "**【報告】**タイトルを編集しました", ephemeral: true});
 		}
 
 	}else if( edit_mode.value === "label_add" ){
 
 		if(message_m.embeds.length !== 0 && value_subject_vote["mode"] === "all" ){
 			var embed_data = message_m.embeds[0];
-			embed_data.addField( edit_value.value as string , "[未投票]" );
+			embed_data.addField( edit_value.value as string , "_[ NotVoted ]_" );
 		}
 
 		if(message_m.components.length !== null){
@@ -287,7 +290,7 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 			var select = component_data.components[0] as Discord.MessageSelectMenu;
 
 			if(select.options.length >= 24) {
-				await interaction.reply({content: "既にある項目が多いため、追加できませんでした。", ephemeral: true});
+				await interaction.reply({content: "**【ERROR】**既にある項目が多いため、追加できませんでした。", ephemeral: true});
 				return ;	
 			}
 
@@ -321,14 +324,14 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 
 			await message_m.edit( Cast_MessageEditOptions(message_m) );
 			await setYOMLData(vote_fileData, value_subject_vote, value_subject_vote_index);
-			await interaction.reply({content: "項目を追加しました", ephemeral: true});
+			await interaction.reply({content: "**【報告】**項目を追加しました", ephemeral: true});
 		}
 
 	}else if( edit_mode.value === "label_del" ){
 
 		var del_index = value_subject_vote["labels"].findIndex(text => text === String(edit_value.value) );
 		if(del_index == -1){
-			await interaction.reply({content: "削除する項目がありませんでした", ephemeral: true});
+			await interaction.reply({content: "**【ERROR】**削除する項目がありませんでした", ephemeral: true});
 			return;
 		};
 
@@ -337,7 +340,7 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 
 		if(message_m.embeds.length !== 0 && value_subject_vote["mode"] === "all"){
 			var field_data = message_m.embeds[0].fields;
-			//embed_data.( edit_value.value as string , "[未投票]" );
+			//embed_data.( edit_value.value as string , "_[ NotVoted ]_" );
 			field_data.splice(del_index, 1);
 			message_m.embeds[0].setFields(field_data);
 		}
@@ -348,7 +351,7 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 			//var seleclt_itemID = "item" + String(del_index+1);
 
 			if(select.options.length <= 2) {
-				await interaction.reply({content: "選択項目が少なすぎて削除できませんでした。", ephemeral: true});
+				await interaction.reply({content: "**【ERROR】**選択項目が少なすぎて削除できませんでした。", ephemeral: true});
 				return ;	
 			}
 
@@ -357,7 +360,7 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 
 			await message_m.edit( Cast_MessageEditOptions(message_m) );
 			await setYOMLData(vote_fileData, value_subject_vote, value_subject_vote_index);
-			await interaction.reply({content: "該当項目を削除しました", ephemeral: true});
+			await interaction.reply({content: "**【報告】**該当項目を削除しました", ephemeral: true});
 
 		}
 
@@ -370,15 +373,15 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 			var select = component_data.components[0] as Discord.MessageSelectMenu;
 			select.setMaxValues( Number(edit_value.value) );
 			await message_m.edit( Cast_MessageEditOptions(message_m) );
-			await interaction.reply({content: "選択可能項目数を変更しました", ephemeral: true});
+			await interaction.reply({content: "**【報告】**選択可能項目数を変更しました", ephemeral: true});
 		}else{
-			await interaction.reply({content: "選択可能項目数を変更できませんでした", ephemeral: true});
+			await interaction.reply({content: "**【ERROR】**選択可能項目数を変更できませんでした", ephemeral: true});
 		}
 
 	}else if( edit_mode.value === "limit_time" ){
 
 		if( Number(edit_value.value) == NaN ){
-			await interaction.reply({content: "制限時間を変更できませんでした。", ephemeral: true});
+			await interaction.reply({content: "**【ERROR】**制限時間を変更できませんでした。", ephemeral: true});
 			return;
 		}
 
@@ -394,7 +397,7 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 
 		await message_m.edit( Cast_MessageEditOptions(message_m) );
 		await setYOMLData(vote_fileData, value_subject_vote, value_subject_vote_index);
-		await interaction.reply({content: "制限時間を変更しました", ephemeral: true});
+		await interaction.reply({content: "**【報告】**制限時間を変更しました", ephemeral: true});
 	}
 
 	} catch(error){
@@ -460,7 +463,7 @@ export async function getSelectMenu(client: Discord.Client, config: Object, inte
 			if(field_data == null) continue;
 
 			if(value["member"] == null || value["member"] == [] ){
-				field_data.value = "[未投票]";
+				field_data.value = "_[ NotVoted ]_";
 			}else{
 				// 各項目の情報を編集
 				var displayName_list = "";
@@ -474,7 +477,7 @@ export async function getSelectMenu(client: Discord.Client, config: Object, inte
 					displayName_list += channelSend.text_check( member.displayName ) + "\n";
 				}
 				if(displayName_list === ""){
-					displayName_list = "[未投票]";
+					displayName_list = "_[ NotVoted ]_";
 				}
 				field_data.value = displayName_list;
 			}
@@ -519,7 +522,9 @@ export async function getSelectMenu(client: Discord.Client, config: Object, inte
 		});
 		await interaction.reply({content:"投票しました" , ephemeral:true });
 	}
-
+	else if(VoteItem["mode"] === "none"){
+		await interaction.reply({content:"投票しました" , ephemeral:true });
+	}
 	//}catch(error){
 	//	console.log(error);
 	//}
@@ -541,34 +546,43 @@ export async function deleteVote(client: Discord.Client, config: Object, interac
 		var value_subject_vote = vote_fileData.find(element => element["VoteBoxID"] != null && element["VoteBoxID"] === String(subject_vote.value) );
 		var value_subject_vote_index = vote_fileData.find(element => element["VoteBoxID"] != null && element["VoteBoxID"] === String(subject_vote.value) );
 	
-		async function setYOMLData(vote_fileData, value_subject_vote, value_subject_vote_index){
-			vote_fileData[value_subject_vote_index] = value_subject_vote;
-			await fs.promises.writeFile(config["vote_tmp_filepath"], yaml.dump(vote_fileData));
-			return;
-		}
-	
 		//console.log("value_subject_vote  =>>> " , value_subject_vote);
 		if(value_subject_vote == null) return;
 
 		if( value_subject_vote["makeUserID"] !== interaction.user.id ){
-			await interaction.reply({content: "【ERROR】あなたは、この投票箱を作成した人ではないため、処理できませんでした。", ephemeral: true});
+			await interaction.reply({content: "**【ERROR】**あなたは、この投票箱を作成した人ではないため、処理できませんでした。", ephemeral: true});
 			return;
 		}
 	
 		// 編集情報の確認	
 		var message_m = await f_message(client, value_subject_vote);
 		if(message_m == null){
-			await interaction.reply({content: "【ERROR】編集するべきメッセージが見つかりませんでした", ephemeral: true});
+			await interaction.reply({content: "**【ERROR】**編集するべきメッセージが見つかりませんでした", ephemeral: true});
 			return;
 		}
 
 		var select = message_m.components[0].components[0] as Discord.MessageSelectMenu;
 		if(select != null){
-			message_m.content = "**≪ -- 投票ボックス -- ≫**\n この投票箱の受け付けは、終了しました。\n" + channelSend.text_check("ヽ(ﾟ∀ﾟ)ﾒ(ﾟ∀ﾟ)ﾒ(ﾟ∀ﾟ)ﾉ 協力ありがとう☆");
+			message_m.content = "**≪ -- 投票ボックス -- ≫**";
+			message_m.embeds[0].setDescription("この投票箱の受け付けは、終了しました。\n" + channelSend.text_check("ヽ(ﾟ∀ﾟ)ﾒ(ﾟ∀ﾟ)ﾒ(ﾟ∀ﾟ)ﾉ 協力ありがとう☆"));
+			message_m.embeds[0].setColor('ORANGE');
 			select.setDisabled(true);
 			await message_m.edit( Cast_MessageEditOptions(message_m) );
-			var text = "投票欄「" + value_subject_vote["Title"] + "」をクローズしました。";
-			await interaction.reply({content:text, ephemeral: true});
+
+			vote_fileData.splice(value_subject_vote_index, 1);
+			await fs.promises.writeFile(config["vote_tmp_filepath"], yaml.dump(vote_fileData));
+
+			await init_VoteCommand_subject_vote(config);			
+
+			var ephemeral_value = interaction.options.get( 'show_result' );
+			if(ephemeral_value == null || ephemeral_value.value as Boolean == false){
+				var text = "投票欄「" + value_subject_vote["Title"] + "」の受け付けを、終了しました。";
+				await interaction.reply({content:text, ephemeral: false});
+				await interaction.followUp({content:"最終結果です。\n（警告：この表示は時間が経つと消えます）", embeds: [ await ResultMessage(client, config, interaction, value_subject_vote) ], ephemeral: true});
+			}else{
+				var text = "【投票箱 最終結果】";
+				await interaction.reply({content:text , embeds: [ await ResultMessage(client, config, interaction, value_subject_vote) ] , ephemeral: false });
+			}
 		}
 
 	}catch (error){
@@ -591,14 +605,65 @@ async function roleSort(client: Discord.Client, config: Object, interaction: Dis
 	}
 
 	/// ここにソート処理を書く。
+	var sortData : Array<Discord.GuildMember> = [];
+	var af_member_sortData : Array<Discord.GuildMember> = [];
+	
+	var sort_hit = false;
+	for(var i = 1; i <= 3; i++){
+		var member_sortData : Array<Discord.GuildMember> = [];
 
+		var option_name = "role_sort_no" + String(i); 
+		var opt_role_sort = interaction.options.get(option_name);
+		if(opt_role_sort == null) continue;
+		else sort_hit = true;
 
-	return members;
+		for(var member_item of members){
+			var item = member_item.roles.cache.map(role => role.id === opt_role_sort.role.id);
+			if(item.length != 0){
+				member_sortData.push(member_item);
+			}
+		}
+
+		if(af_member_sortData == [] || af_member_sortData == null){		
+			af_member_sortData = member_sortData;
+			sortData = member_sortData;
+		}else{
+			sortData = sortData.concat( member_sortData.filter(itemA => af_member_sortData.indexOf(itemA) == -1) );
+			af_member_sortData = member_sortData;
+		}
+	}
+	// ソートしてないなら...データをそのまま渡す。
+	if( sort_hit == false){
+		sortData = members;
+	}
+	return sortData;
+	//return members;
+}
+
+async function ResultMessage(client: Discord.Client, config: Object, interaction: Discord.CommandInteraction, value_subject_vote) : Promise<Discord.MessageEmbed > {
+	//var content_text = "";
+	var send_embed : Discord.MessageEmbed = new Discord.MessageEmbed();
+	send_embed.setTitle("投票箱「"+ value_subject_vote["Title"] + "」の投票結果");
+	for(var subject_data of value_subject_vote["data"]){
+		var field_text = "";
+
+		var members = await roleSort(client, config, interaction, value_subject_vote["guildID"], subject_data["member"]);
+		for(var member_item of members){
+			//console.log(member_item.displayName);
+			field_text += channelSend.text_check(member_item.displayName) + "\n";
+		}
+		if(field_text == ""){
+			field_text = "_[ NotVoted ]_";
+		}
+		send_embed.addField(subject_data["label"], field_text);
+	}
+	return send_embed;
 }
 
 export async function infoVote(client: Discord.Client, config: Object, interaction: Discord.CommandInteraction) {
 	try{
-	
+		await interaction.reply({content: "**【作業中】**少々お待ちください。" + channelSend.text_check("_(:3」∠)_") , ephemeral: true});
+
 		var vote_fileData = yaml.load(fs.readFileSync(config["vote_tmp_filepath"], 'utf8'));
 	
 		var subject_vote = interaction.options.get( 'subject_vote' );
@@ -620,14 +685,12 @@ export async function infoVote(client: Discord.Client, config: Object, interacti
 		if(value_subject_vote == null) return;
 
 		if( value_subject_vote["makeUserID"] !== interaction.user.id ){
-			await interaction.reply({content: "【ERROR】あなたは、この投票箱を作成した人ではないため、処理できませんでした。", ephemeral: true});
+			await interaction.editReply({content: "**【ERROR】**あなたは、この投票箱を作成した人ではないため、処理できませんでした。"});
 			return;
 		}
-	
-		var content_text = "";
 
-
+		await interaction.editReply({content:"**【投票箱 途中結果】**\n（警告：この表示は時間が経つと消えます）" , embeds: [ await ResultMessage(client, config, interaction, value_subject_vote) ] });
 	}catch (error){
-
+		console.log(error);
 	}
 }
