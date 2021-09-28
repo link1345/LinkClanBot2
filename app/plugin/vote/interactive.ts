@@ -43,8 +43,13 @@ export class main extends PluginBase {
 		}else if( interaction.isCommand() && interaction.commandName === "vote_info" ){
 			if(!await channelSend.Command_permison_check(client, interaction, config)) return;
 
+			
+			await vote_f.infoVote(client, config, interaction);
+
 		}else if( interaction.isCommand() && interaction.commandName === "vote_close" ){
 			if(!await channelSend.Command_permison_check(client, interaction, config)) return;
+
+			await vote_f.deleteVote(client, config, interaction);
 
 		}else if( interaction.isCommand() && interaction.commandName === "vote_edit" ){
 			if(!await channelSend.Command_permison_check(client, interaction, config)) return;

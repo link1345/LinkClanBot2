@@ -63,34 +63,52 @@ async function f_message(client: Discord.Client, value_subject_vote ) : Promise<
 	return message_m;
 }
 
+function Cast_MessageEditOptions(message_m: Discord.Message) : Discord.MessageEditOptions{
+	var SendMessageData: Discord.MessageEditOptions = {
+		content: message_m.content,
+		embeds: message_m.embeds,
+		components: message_m.components,
+	};
+	return SendMessageData;
+}
+
 export async function setVote(client: Discord.Client, config: Object, interaction: Discord.CommandInteraction) : Promise <void> {
 	// このユーザーが既に何回投票欄を設定しているか？
 
 	// 投票欄を作成
-	
-	/* // ver. Button 
-	var row = new Discord.MessageActionRow();
-	for(var num = 1; num <= 4; num++){
-		const text_id = 'item' + num;
-		const text_color : Discord.MessageButtonStyleResolvable = Number(interaction.options.get( text_id + '-color' ).value);
-		const text_label = String(interaction.options.get( text_id ).value);
-		row.addComponents(
-			new Discord.MessageButton()
-				.setCustomId(text_id)
-				.setLabel( text_label )
-				.setStyle( text_color ),
-		);
-	}*/
-
 	//try{
 
 	await interaction.reply({content: "**【作業中】**少々お待ちください。" + channelSend.text_check("_(:3」∠)_") , ephemeral: false});
 
 	var row = new Discord.MessageActionRow();
-	const text_id = interaction.user.id + "_VoteBox_" + 0;
+
+	function id_cheak(config: Object, interaction: Discord.CommandInteraction) : string{
+		var VoteBoxData = yaml.load(fs.readFileSync(config["vote_tmp_filepath"], 'utf8'));
+
+		if(VoteBoxData == null){
+			return String(interaction.user.id) + "_VoteBox_" + String(0);
+		}
+
+		for(var i = 0; i < 5; i++){
+			const text_id = String(interaction.user.id) + "_VoteBox_" + String(i);
+			if( VoteBoxData.findIndex(obj => obj["VoteBoxID"] === text_id) == -1 ){
+				return text_id;
+			}
+		}
+		return "";
+	}
+
+	const text_id = id_cheak(config, interaction);
+	if(text_id === ""){
+		await interaction.editReply({content:"【ERROR】１人が投票欄を作成できる個数を超えています(max:5)" });
+		return;
+	}
+	
+	
 	var item : Array<Discord.MessageSelectOptionData> = [];
 
 	var labels = [];
+	var item_value = [];
 	for(var num = 1; num <= 5; num++){
 		const text_item_id = "item" + num;
 		var text_label = interaction.options.get( text_item_id );
@@ -112,9 +130,9 @@ export async function setVote(client: Discord.Client, config: Object, interactio
 		}
 		//labels.push({"label":text_label.value });
 		labels.push( text_label.value );
+		item_value.push( text_item_id );
 		
 	}
-	console.log(labels);
 
 	var choice_count = Number(interaction.options.get( 'choice_count' ).value);
 	if(choice_count <= 0){
@@ -150,7 +168,7 @@ export async function setVote(client: Discord.Client, config: Object, interactio
 	
 	if( open_information === "none" ){
 	}else if( open_information === "count" ){
-		send_embed.addField("Count", "まだ誰も投票してません (´・ω・｀)" );
+		send_embed.addField("Count", channelSend.text_check("まだ誰も投票してません (´・ω・｀)") );
 	}else if( open_information === "all" ){
 		//send_embed.addField('\u200B', '\u200B');
 		var cound_userlist = [];
@@ -163,19 +181,18 @@ export async function setVote(client: Discord.Client, config: Object, interactio
 	}
 
 	var send_obj : Discord.InteractionReplyOptions = {
-		content : '**≪ -- 投票ボックス -- ≫**',
+		content : '**≪ -- Ballot box -- ≫**',
 		components: [row],
 		embeds: [send_embed]
 	}
 
 	var label_data = [];
-	for(var label_item of labels){
-		label_data.push({ "label": label_item, "member": []});
+	for(var i = 0;i < labels.length; i++){
+		label_data.push({ "label": labels[i], "value": item_value[i], "member": [] });
 	}	
 
 	await interaction.editReply(send_obj);
 	var replayReturn : Discord.Message = await interaction.fetchReply() as Discord.Message;
-	console.log("message === " , replayReturn);
 
 	var VoteBoxData = yaml.load(fs.readFileSync(config["vote_tmp_filepath"], 'utf8'));
 	if(VoteBoxData == null){
@@ -190,7 +207,8 @@ export async function setVote(client: Discord.Client, config: Object, interactio
 		"channelID": replayReturn.channelId ,
 		"MessageID": replayReturn.id,
 		"Title": title,
-		"data": label_data
+		"data": label_data,
+		"mode":  open_information
 	});
 
 	// ymlで記録
@@ -227,9 +245,14 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 		return;
 	}
 
-
 	//console.log("value_subject_vote  =>>> " , value_subject_vote);
 	if(value_subject_vote == null) return;
+
+	if( value_subject_vote["makeUserID"] !== interaction.user.id ){
+		await interaction.reply({content: "【ERROR】あなたは、この投票箱を作成した人ではないため、処理できませんでした。", ephemeral: true});
+		return;
+	}
+
 
 	// 編集情報の確認
 	var edit_mode = interaction.options.get( 'mode' );
@@ -237,35 +260,24 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 
 	var message_m = await f_message(client, value_subject_vote);
 	if(message_m == null){
-		await interaction.reply({content: "編集するべきメッセージが見つかりませんでした", ephemeral: true});
+		await interaction.reply({content: "【ERROR】編集するべきメッセージが見つかりませんでした", ephemeral: true});
 		return;
 	}
 	//console.log("message_m  =>>> " , message_m);
-
-	function Cast_MessageEditOptions(message_m: Discord.Message) : Discord.MessageEditOptions{
-		var SendMessageData: Discord.MessageEditOptions = {
-			content: message_m.content,
-			embeds: message_m.embeds,
-			components: message_m.components,
-		};
-		return SendMessageData;
-	}
 
 	if( edit_mode.value === "title" ){	
 		if(message_m.embeds.length !== 0){
 			var embed_data = message_m.embeds[0];
 			embed_data.setTitle( "Title : " + (edit_value.value as string) );
 			await message_m.edit( Cast_MessageEditOptions(message_m) );
+			await init_VoteCommand_subject_vote(config);
 
 			await interaction.reply({content: "タイトルを編集しました", ephemeral: true});
 		}
 
 	}else if( edit_mode.value === "label_add" ){
 
-		value_subject_vote["labels"].push(edit_value.value as string);
-		value_subject_vote["data"].push({ "label":edit_value.value as string , "member": [] });
-		
-		if(message_m.embeds.length !== 0){
+		if(message_m.embeds.length !== 0 && value_subject_vote["mode"] === "all" ){
 			var embed_data = message_m.embeds[0];
 			embed_data.addField( edit_value.value as string , "[未投票]" );
 		}
@@ -295,6 +307,10 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 
 			var seleclt_itemID = getID(select);
 			console.log( seleclt_itemID );
+			
+			value_subject_vote["labels"].push(edit_value.value as string);
+			value_subject_vote["data"].push({ "label":edit_value.value as string , "value": seleclt_itemID, "member": [] });
+			
 			var item :Discord.MessageSelectOptionData = {label:String(edit_value.value) , value: seleclt_itemID };
 
 			select.addOptions(item);
@@ -319,7 +335,7 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 		value_subject_vote["labels"].splice(del_index, 1);
 		value_subject_vote["data"].splice(del_index, 1);
 
-		if(message_m.embeds.length !== 0){
+		if(message_m.embeds.length !== 0 && value_subject_vote["mode"] === "all"){
 			var field_data = message_m.embeds[0].fields;
 			//embed_data.( edit_value.value as string , "[未投票]" );
 			field_data.splice(del_index, 1);
@@ -344,8 +360,6 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 			await interaction.reply({content: "該当項目を削除しました", ephemeral: true});
 
 		}
-
-
 
 	}else if( edit_mode.value === "choice_count" ){
 
@@ -391,10 +405,12 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 
 
 export async function getSelectMenu(client: Discord.Client, config: Object, interaction: Discord.SelectMenuInteraction) : Promise<Boolean> {
-	try{
+	//try{
+	
 	var VoteBoxData = yaml.load(fs.readFileSync(config["vote_tmp_filepath"], 'utf8'));
+	// 投票Bot情報が無ければ、何もしない。
 	if(VoteBoxData == null){
-		interaction.reply({content:"【EEROR】問題が発生しました。Bot管理者にご相談ください。", ephemeral:true});
+		//await interaction.reply({content:"【EEROR】問題が発生しました。Bot管理者にご相談ください。", ephemeral:true});
 		return false;
 	}
 
@@ -402,18 +418,19 @@ export async function getSelectMenu(client: Discord.Client, config: Object, inte
 		element["MessageID"] != null && element["MessageID"] === String(interaction.message.id) &&
 		element["channelID"] != null && element["channelID"] === String(interaction.channelId)
 	);
+	// 該当する投票Botが無ければ...何もしない
 	if(VoteItem == null){
-		interaction.reply({content:"【EEROR】問題が発生しました。Bot管理者にご相談ください。", ephemeral:true});
+		//await interaction.reply({content:"【EEROR】問題が発生しました。Bot管理者にご相談ください。", ephemeral:true});
 		return false;
 	}
 
 	// ymlデータの更新
 	for(var value of VoteItem["data"]){
 		// 選択されている
-		if( interaction.values.findIndex( text => text === value["label"] ) != -1 ){
+		if( interaction.values.findIndex( text => text === value["value"] ) != -1 ){
 			// メンバーリストに既に記載されていたら…
 			if( value["member"].findIndex( id => id === String(interaction.user.id) ) != -1){
-				// 何もしない	
+				// 何もしない
 			}else{
 			// 記載されてなかったら...
 				value["member"].push( String(interaction.user.id) );
@@ -430,39 +447,187 @@ export async function getSelectMenu(client: Discord.Client, config: Object, inte
 			}
 		}
 	}
+	await fs.promises.writeFile(config["vote_tmp_filepath"], yaml.dump(VoteBoxData));
+	
 
 	// 表の更新
 	var t_message = await f_message(client, VoteItem);
-	var field = t_message.embeds[0].fields;
-	for(var value of VoteItem["data"]){
-		var field_data = field.find(item => item.name === value);
-		if(field_data == null) continue;
+	// 全部表示モード
+	if(VoteItem["mode"] === "all"){
+		var field = t_message.embeds[0].fields;
+		for(var value of VoteItem["data"]){
+			var field_data = field.find(item => item.name === value["label"]);
+			if(field_data == null) continue;
 
-		if(value["member"] == null || value["member"] == [] ){
-			field_data.value = "[未投票]";
-		}else{
-			// 各項目の情報を編集
-			var displayName_list = "";
-			for(var userID of value["member"]){
-				client.guilds.fetch();
-				var guild = client.guilds.cache.get(VoteItem["guildID"]);
-				guild.members.fetch();
-				var member = guild.members.cache.get(userID);
+			if(value["member"] == null || value["member"] == [] ){
+				field_data.value = "[未投票]";
+			}else{
+				// 各項目の情報を編集
+				var displayName_list = "";
+				for(var userID of value["member"]){
+					await client.guilds.fetch();
+					var guild = client.guilds.cache.get(VoteItem["guildID"]);
+					await guild.members.fetch();
+					var member = guild.members.cache.get(userID);
+					await member.fetch();
 
-			 	displayName_list += "\n" + channelSend.text_check( member.displayName );
+					displayName_list += channelSend.text_check( member.displayName ) + "\n";
+				}
+				if(displayName_list === ""){
+					displayName_list = "[未投票]";
+				}
+				field_data.value = displayName_list;
 			}
-			field_data.value = displayName_list;
 		}
-	}
-	t_message.embeds[0].fields = field;
-	t_message.edit({
-		content: t_message.content,
-		embeds: t_message.embeds,
-		components: t_message.components
-	});
-	}catch(error){
-		console.log(error);
+		t_message.embeds[0].fields = field;
+		await t_message.edit({
+			content: t_message.content,
+			embeds: t_message.embeds,
+			components: t_message.components
+		});
+		await interaction.reply({content:"投票しました" , ephemeral:true });
 	}
 
-	return true
+	// 数だけ表示モード
+	else if(VoteItem["mode"] === "count"){
+		var field = t_message.embeds[0].fields;
+
+		var field_data = field.find(item => item.name === "Count");
+		if(field_data == null) return;
+
+		var send_text = "";
+		for(var value of VoteItem["data"]){
+			if(value["member"] == null || value["member"] == [] ){
+				send_text += value["label"] + " : " + "0" + "\n";
+				//field_data.value = channelSend.text_check("まだ誰も投票してません (´・ω・｀)")
+			}else{
+				// 各項目の情報を編集
+				var member_count = 0;
+				for(var userID of value["member"]){
+					member_count += 1;
+				}
+				send_text += value["label"] + " : " + String(member_count) + "\n";
+			}
+		}		
+		field_data.value = send_text;
+
+		t_message.embeds[0].fields = field;
+		await t_message.edit({
+			content: t_message.content,
+			embeds: t_message.embeds,
+			components: t_message.components
+		});
+		await interaction.reply({content:"投票しました" , ephemeral:true });
+	}
+
+	//}catch(error){
+	//	console.log(error);
+	//}
+	
+	return true;
+}
+
+export async function deleteVote(client: Discord.Client, config: Object, interaction: Discord.CommandInteraction) {
+	try{
+	
+		var vote_fileData = yaml.load(fs.readFileSync(config["vote_tmp_filepath"], 'utf8'));
+	
+		var subject_vote = interaction.options.get( 'subject_vote' );
+		if (subject_vote == null || subject_vote.value == null || String(subject_vote.value) === ""){
+			return;
+		}
+	
+		// 選択肢Boxの情報取得
+		var value_subject_vote = vote_fileData.find(element => element["VoteBoxID"] != null && element["VoteBoxID"] === String(subject_vote.value) );
+		var value_subject_vote_index = vote_fileData.find(element => element["VoteBoxID"] != null && element["VoteBoxID"] === String(subject_vote.value) );
+	
+		async function setYOMLData(vote_fileData, value_subject_vote, value_subject_vote_index){
+			vote_fileData[value_subject_vote_index] = value_subject_vote;
+			await fs.promises.writeFile(config["vote_tmp_filepath"], yaml.dump(vote_fileData));
+			return;
+		}
+	
+		//console.log("value_subject_vote  =>>> " , value_subject_vote);
+		if(value_subject_vote == null) return;
+
+		if( value_subject_vote["makeUserID"] !== interaction.user.id ){
+			await interaction.reply({content: "【ERROR】あなたは、この投票箱を作成した人ではないため、処理できませんでした。", ephemeral: true});
+			return;
+		}
+	
+		// 編集情報の確認	
+		var message_m = await f_message(client, value_subject_vote);
+		if(message_m == null){
+			await interaction.reply({content: "【ERROR】編集するべきメッセージが見つかりませんでした", ephemeral: true});
+			return;
+		}
+
+		var select = message_m.components[0].components[0] as Discord.MessageSelectMenu;
+		if(select != null){
+			message_m.content = "**≪ -- 投票ボックス -- ≫**\n この投票箱の受け付けは、終了しました。\n" + channelSend.text_check("ヽ(ﾟ∀ﾟ)ﾒ(ﾟ∀ﾟ)ﾒ(ﾟ∀ﾟ)ﾉ 協力ありがとう☆");
+			select.setDisabled(true);
+			await message_m.edit( Cast_MessageEditOptions(message_m) );
+			var text = "投票欄「" + value_subject_vote["Title"] + "」をクローズしました。";
+			await interaction.reply({content:text, ephemeral: true});
+		}
+
+	}catch (error){
+
+	}
+}
+
+
+async function roleSort(client: Discord.Client, config: Object, interaction: Discord.CommandInteraction, guildID: string, idList: Array<string>) : Promise<Array<Discord.GuildMember>>{
+	var members : Array<Discord.GuildMember> = [];
+	
+	for(var userID of idList){
+		await client.guilds.fetch();
+		var guild = client.guilds.cache.get(guildID);
+		await guild.members.fetch();
+		var member = guild.members.cache.get(userID);
+		await member.fetch();
+
+		members.push( member );
+	}
+
+	/// ここにソート処理を書く。
+
+
+	return members;
+}
+
+export async function infoVote(client: Discord.Client, config: Object, interaction: Discord.CommandInteraction) {
+	try{
+	
+		var vote_fileData = yaml.load(fs.readFileSync(config["vote_tmp_filepath"], 'utf8'));
+	
+		var subject_vote = interaction.options.get( 'subject_vote' );
+		if (subject_vote == null || subject_vote.value == null || String(subject_vote.value) === ""){
+			return;
+		}
+	
+		// 選択肢Boxの情報取得
+		var value_subject_vote = vote_fileData.find(element => element["VoteBoxID"] != null && element["VoteBoxID"] === String(subject_vote.value) );
+		var value_subject_vote_index = vote_fileData.find(element => element["VoteBoxID"] != null && element["VoteBoxID"] === String(subject_vote.value) );
+	
+		async function setYOMLData(vote_fileData, value_subject_vote, value_subject_vote_index){
+			vote_fileData[value_subject_vote_index] = value_subject_vote;
+			await fs.promises.writeFile(config["vote_tmp_filepath"], yaml.dump(vote_fileData));
+			return;
+		}
+	
+		//console.log("value_subject_vote  =>>> " , value_subject_vote);
+		if(value_subject_vote == null) return;
+
+		if( value_subject_vote["makeUserID"] !== interaction.user.id ){
+			await interaction.reply({content: "【ERROR】あなたは、この投票箱を作成した人ではないため、処理できませんでした。", ephemeral: true});
+			return;
+		}
+	
+		var content_text = "";
+
+
+	}catch (error){
+
+	}
 }
