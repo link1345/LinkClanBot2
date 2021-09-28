@@ -1,0 +1,210 @@
+
+## ---------------------------------------------
+## ---- Configure to your environment. ---------
+## ---------------------------------------------
+
+#  -- RoleID_List format
+# "rolename" : '&Runk"number"_Role' 'SystemID' 
+#   'Rolename' may be used in the Bot program for a variety of notations.
+#   It is recommended that you enter the appropriate value for your environment.
+# &Runk"number"_Role 
+#   To use the values around, '&Runk"number"_Role' will be used. Put in any character you like.
+RoleID_List: 
+ 仮入隊 : &Runk1_Role '000000000000000000'
+ 正隊員 : &Runk2_Role '000000000000000000'
+ 幹部 : &Runk3_Role '000000000000000000'
+
+#  -- Channel_List format
+# "Channelname" : '&Runk"number"_Channel' 'SystemID'
+#   'Channelname' may be used in the Bot program for a variety of notations.
+#   It is recommended that you enter the appropriate value for your environment.
+# &Runk"number"_Channel
+#   To use the values around, '&Runk"number"_Channel' will be used. Put in any character you like.
+ChannelID_List:
+ 一般 : &Runk1_Channel '000000000000000000'
+ 上位 : &Runk2_Channel '000000000000000000'
+
+## ---------------------------------------------
+## ---------------------------------------------
+
+vote_tmp_filepath : "./analyze/vote/now.yml"
+
+
+## slashCommand Data
+## ---------------------------
+# https://discord.com/developers/docs/interactions/application-commands#slash-commands
+## ---------------------------
+# vote_opon
+#  ... 1ユーザーあたり5つの投票欄しか作れません。
+slashCommand :
+ - name : 'vote_opon'
+   description : '投票箱を作成'
+   type : 1
+   defaultPermission : true
+   options :
+    - name : 'message'
+      description : "投票箱を載せるときのメッセージ文"
+      type : 3
+      required : true
+    - name : 'open_information'
+      description : "投票期間中に、備考欄に投票状況を表示するか？"
+      type : 3
+      required : true
+      choices :
+      - name : '非表示'
+        value : "none"
+      - name : '投票人数のみ'
+        value : "count"
+      - name : '投票人数＋投票者名を表示'
+        value : "all"
+    - name : 'limit_time'
+      description : "投票可能期間は、何日間か(コマンドからも閉じるができます)"
+      type : 4
+      required : true
+    - name : 'choice_count'
+      description : "いくつまで複数選択できるか？(defalt:1 max:5)"
+      type : 4
+      required : true
+    - name : 'item1'
+      description : "選択肢1 メッセージ"
+      type : 3
+      required : true
+    - name : 'item2'
+      description : "選択肢2 メッセージ"
+      type : 3
+      required : true
+    - name : 'item3'
+      description : "選択肢3 メッセージ"
+      type : 3
+      required : false
+    - name : 'item4'
+      description : "選択肢4 メッセージ"
+      type : 3
+      required : false
+    - name : 'item5'
+      description : "選択肢5 メッセージ"
+      type : 3
+      required : false
+    - name : 'item1-description'
+      description : "選択肢1 備考"
+      type : 3
+      required : false
+    - name : 'item2-description'
+      description : "選択肢2 備考"
+      type : 3
+      required : false
+    - name : 'item3-description'
+      description : "選択肢3 備考"
+      type : 3
+      required : false
+    - name : 'item4-description'
+      description : "選択肢4 備考"
+      type : 3
+      required : false
+    - name : 'item5-description'
+      description : "選択肢5 備考"
+      type : 3
+      required : false
+
+
+ - name : 'vote_info'
+   description : '作成した投票箱の情報を確認(投票作成者が実行可)'
+   type : 1
+   defaultPermission : true
+   options :
+    - name : 'subject_vote'
+      description : "どの投票箱を確認するか？"
+      type : 3
+      required : true
+      choices :
+      - name : 'text'
+        value : "text"
+    - name : 'role_sort_no1'
+      description : "役職でソートを掛けます。第1優先"
+      type : 8 
+      required : false
+    - name : 'role_sort_no2'
+      description : "役職でソートを掛けます。第2優先"
+      type : 8 
+      required : false
+    - name : 'role_sort_no3'
+      description : "役職でソートを掛けます。第3優先"
+      type : 8 
+      required : false
+
+
+ - name : 'vote_close'
+   description : '作成した投票欄を閉じる(投票作成者が実行可)'
+   type : 1
+   defaultPermission : true
+   options :  
+    - name : 'subject_vote'
+      description : "どの投票箱を閉じるか？"
+      type : 3
+      required : true
+      choices :
+      - name : 'text'
+        value : "text"
+    - name : 'role_sort_no1'
+      description : "役職でソートを掛けます。第1優先"
+      type : 8 
+    - name : 'role_sort_no2'
+      description : "役職でソートを掛けます。第2優先"
+      type : 8 
+    - name : 'role_sort_no3'
+      description : "役職でソートを掛けます。第3優先"
+      type : 8 
+    - name : 'show_result'
+      description : "投票結果を公表するか"
+      type : 5
+
+ - name : 'vote_edit'
+   description : '作成した投票箱を編集(投票作成者が実行可)'
+   type : 1
+   defaultPermission : true
+   options :
+    - name : 'subject_vote'
+      description : "どの投票箱を編集するか？"
+      type : 3
+      required : true
+      choices :
+      - name : 'text'
+        value : "text"
+    - name : 'mode'
+      description : "どの情報を編集するか？"
+      type : 3
+      required : true
+      choices :
+      - name : 'タイトル'
+        value : "title"
+      - name : '選択肢追加'
+        value : "label_add"
+      - name : '選択肢削除'
+        value : "label_del"
+      - name : '選択できる数'
+        value : "choice_count"
+      - name : '制限時間'
+        value : "limit_time"
+    - name : 'value'
+      description : "値"
+      type : 3
+      required : true
+
+
+#slashCommand_permissions :
+# - name : 'vote_open'
+#   option :
+#   - id : *Runk3_Role
+#     type : 'ROLE'
+#     permission : true
+
+#slashCommand_channel_permisson :
+# - name : 'vote'
+#   defaultPermission : true
+#   option : 
+#    - id : *Runk2_Channel
+
+
+plugin_folder: "vote"
+module:
+ - interactive
