@@ -240,7 +240,7 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 
 	// 選択肢Boxの情報取得
 	var value_subject_vote = vote_fileData.find(element => element["VoteBoxID"] != null && element["VoteBoxID"] === String(subject_vote.value) );
-	var value_subject_vote_index = vote_fileData.find(element => element["VoteBoxID"] != null && element["VoteBoxID"] === String(subject_vote.value) );
+	var value_subject_vote_index = vote_fileData.findIndex(element => element["VoteBoxID"] != null && element["VoteBoxID"] === String(subject_vote.value) );
 
 	async function setYOMLData(vote_fileData, value_subject_vote, value_subject_vote_index){
 		vote_fileData[value_subject_vote_index] = value_subject_vote;
@@ -271,8 +271,11 @@ export async function editVote(client: Discord.Client, config: Object, interacti
 	if( edit_mode.value === "title" ){	
 		if(message_m.embeds.length !== 0){
 			var embed_data = message_m.embeds[0];
+
+			value_subject_vote["Title"] = (edit_value.value as string);
 			embed_data.setTitle( "Title : " + (edit_value.value as string) );
 			await message_m.edit( Cast_MessageEditOptions(message_m) );
+			await setYOMLData(vote_fileData, value_subject_vote, value_subject_vote_index);
 			await init_VoteCommand_subject_vote(config);
 
 			await interaction.reply({content: "**【報告】**タイトルを編集しました", ephemeral: true});
@@ -427,6 +430,8 @@ export async function getSelectMenu(client: Discord.Client, config: Object, inte
 		return false;
 	}
 
+	await interaction.reply({content: "**【作業中】**少々お待ちください。" + channelSend.text_check("_(:3」∠)_") , ephemeral: true});
+
 	// ymlデータの更新
 	for(var value of VoteItem["data"]){
 		// 選択されている
@@ -488,7 +493,7 @@ export async function getSelectMenu(client: Discord.Client, config: Object, inte
 			embeds: t_message.embeds,
 			components: t_message.components
 		});
-		await interaction.reply({content:"投票しました" , ephemeral:true });
+		await interaction.editReply({content: "投票箱「" + VoteItem["Title"] + "」に投票しました" });
 	}
 
 	// 数だけ表示モード
@@ -520,10 +525,10 @@ export async function getSelectMenu(client: Discord.Client, config: Object, inte
 			embeds: t_message.embeds,
 			components: t_message.components
 		});
-		await interaction.reply({content:"投票しました" , ephemeral:true });
+		await interaction.editReply({content: "投票箱「" + VoteItem["Title"] + "」に投票しました" });
 	}
 	else if(VoteItem["mode"] === "none"){
-		await interaction.reply({content:"投票しました" , ephemeral:true });
+		await interaction.editReply({content: "投票箱「" + VoteItem["Title"] + "」に投票しました" });
 	}
 	//}catch(error){
 	//	console.log(error);
@@ -544,7 +549,7 @@ export async function deleteVote(client: Discord.Client, config: Object, interac
 	
 		// 選択肢Boxの情報取得
 		var value_subject_vote = vote_fileData.find(element => element["VoteBoxID"] != null && element["VoteBoxID"] === String(subject_vote.value) );
-		var value_subject_vote_index = vote_fileData.find(element => element["VoteBoxID"] != null && element["VoteBoxID"] === String(subject_vote.value) );
+		var value_subject_vote_index = vote_fileData.findIndex(element => element["VoteBoxID"] != null && element["VoteBoxID"] === String(subject_vote.value) );
 	
 		//console.log("value_subject_vote  =>>> " , value_subject_vote);
 		if(value_subject_vote == null) return;
@@ -673,7 +678,7 @@ export async function infoVote(client: Discord.Client, config: Object, interacti
 	
 		// 選択肢Boxの情報取得
 		var value_subject_vote = vote_fileData.find(element => element["VoteBoxID"] != null && element["VoteBoxID"] === String(subject_vote.value) );
-		var value_subject_vote_index = vote_fileData.find(element => element["VoteBoxID"] != null && element["VoteBoxID"] === String(subject_vote.value) );
+		var value_subject_vote_index = vote_fileData.findIndex(element => element["VoteBoxID"] != null && element["VoteBoxID"] === String(subject_vote.value) );
 	
 		async function setYOMLData(vote_fileData, value_subject_vote, value_subject_vote_index){
 			vote_fileData[value_subject_vote_index] = value_subject_vote;
