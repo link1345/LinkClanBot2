@@ -87,6 +87,10 @@ slashCommand :
         value : "csv"
       - name : 'yml形式(raw)'
         value : "raw"
+    - name : "role"
+      description : 'どのロールの情報がほしいですか？'
+      type : 8
+      required : true
 
  - name : 'user-voicelog'
    description : '今月のボイスチャンネル参加時間をチェックします。'

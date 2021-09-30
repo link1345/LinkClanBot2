@@ -155,17 +155,18 @@ export async function setVote(client: Discord.Client, config: Object, interactio
 
 	var title = String(interaction.options.get( 'message' ).value);
 	var open_information = String(interaction.options.get( 'open_information' ).value);
-	var limit_time = Number(interaction.options.get( 'limit_time' ).value);
+	//var limit_time = Number(interaction.options.get( 'limit_time' ).value);
 
 	
 	var send_embed : Discord.MessageEmbed = new Discord.MessageEmbed();
 	send_embed.setTitle("Title : " + title);
 
-	var setTime = new Date();
-	setTime.setDate( setTime.getDate() + limit_time );
-	send_embed.setTimestamp(setTime);
+	//var setTime = new Date();
+	//setTime.setDate( setTime.getDate() + limit_time );
+	//send_embed.setTimestamp(setTime);
 	send_embed.setColor('#0099ff');
-	send_embed.setFooter("投票締め切り日 … ");
+	//send_embed.setTimestamp(setTime);
+	//send_embed.setFooter("投票締め切り日 … ");
 	
 	if( open_information === "none" ){
 		send_embed.addField('\u200B', '\u200B');
@@ -205,7 +206,7 @@ export async function setVote(client: Discord.Client, config: Object, interactio
 		"makeUserID": interaction.user.id,
 		"VoteBoxID": text_id,
 		"labels": labels,
-		"limit": String(setTime.valueOf()),
+		//"limit": String(setTime.valueOf()),
 		"guildID": interaction.guildId,
 		"channelID": replayReturn.channelId ,
 		"MessageID": replayReturn.id,
@@ -554,15 +555,17 @@ export async function deleteVote(client: Discord.Client, config: Object, interac
 		//console.log("value_subject_vote  =>>> " , value_subject_vote);
 		if(value_subject_vote == null) return;
 
+		await interaction.reply({content: "**【作業中】**少々お待ちください。" + channelSend.text_check("_(:3」∠)_") , ephemeral: true});
+
 		if( value_subject_vote["makeUserID"] !== interaction.user.id ){
-			await interaction.reply({content: "**【ERROR】**あなたは、この投票箱を作成した人ではないため、処理できませんでした。", ephemeral: true});
+			await interaction.editReply({content: "**【ERROR】**あなたは、この投票箱を作成した人ではないため、処理できませんでした。"});
 			return;
 		}
 	
 		// 編集情報の確認	
 		var message_m = await f_message(client, value_subject_vote);
 		if(message_m == null){
-			await interaction.reply({content: "**【ERROR】**編集するべきメッセージが見つかりませんでした", ephemeral: true});
+			await interaction.editReply({content: "**【ERROR】**編集するべきメッセージが見つかりませんでした"});
 			return;
 		}
 
@@ -579,14 +582,15 @@ export async function deleteVote(client: Discord.Client, config: Object, interac
 
 			await init_VoteCommand_subject_vote(config);			
 
+			var text = "投票欄「" + value_subject_vote["Title"] + "」の受け付けを、終了しました。";
 			var ephemeral_value = interaction.options.get( 'show_result' );
 			if(ephemeral_value == null || ephemeral_value.value as Boolean == false){
-				var text = "投票欄「" + value_subject_vote["Title"] + "」の受け付けを、終了しました。";
-				await interaction.reply({content:text, ephemeral: false});
-				await interaction.followUp({content:"最終結果です。\n（警告：この表示は時間が経つと消えます）", embeds: [ await ResultMessage(client, config, interaction, value_subject_vote) ], ephemeral: true});
+				//await interaction.editReply({content:text, ephemeral: false});
+				//await interaction.followUp({content:"最終結果です。\n（警告：この表示は時間が経つと消えます）", embeds: [ await ResultMessage(client, config, interaction, value_subject_vote) ], ephemeral: true});
+				await interaction.editReply({content:"最終結果です。\n（警告：この表示は時間が経つと消えます）", embeds: [ await ResultMessage(client, config, interaction, value_subject_vote) ] });
+				await interaction.followUp({content:text, ephemeral: false});
 			}else{
-				var text = "【投票箱 最終結果】";
-				await interaction.reply({content:text , embeds: [ await ResultMessage(client, config, interaction, value_subject_vote) ] , ephemeral: false });
+				await interaction.followUp({content:text , embeds: [ await ResultMessage(client, config, interaction, value_subject_vote) ] , ephemeral: false });
 			}
 		}
 

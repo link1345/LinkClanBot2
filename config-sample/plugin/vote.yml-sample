@@ -57,10 +57,10 @@ slashCommand :
         value : "count"
       - name : '投票人数＋投票者名を表示'
         value : "all"
-    - name : 'limit_time'
-      description : "投票可能期間は、何日間か(コマンドからも閉じるができます)"
-      type : 4
-      required : true
+#    - name : 'limit_time'
+#      description : "投票可能期間は、何日間か(コマンドからも閉じるができます)"
+#      type : 4
+#      required : true
     - name : 'choice_count'
       description : "いくつまで複数選択できるか？(defalt:1 max:5)"
       type : 4
@@ -183,8 +183,8 @@ slashCommand :
         value : "label_del"
       - name : '選択できる数'
         value : "choice_count"
-      - name : '制限時間'
-        value : "limit_time"
+#      - name : '制限時間'
+#        value : "limit_time"
     - name : 'value'
       description : "値"
       type : 3
