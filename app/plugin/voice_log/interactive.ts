@@ -145,7 +145,9 @@ export class main extends PluginBase {
 			try{
 				
 				if( interaction.inGuild() == true ){
-					var timeData = await chart.one_MakeTimeList( client,  config["output_TimeLine_filepath"] , [ interaction.member as Discord.GuildMember ]);
+					var user_list : Discord.Collection<string, Discord.GuildMember> = new Discord.Collection ;
+					user_list.set(interaction.member.user.id, interaction.member as Discord.GuildMember);
+					var timeData = await chart.one_MakeTimeList( client,  config["output_TimeLine_filepath"] , user_list );
 					//timeData = timeData.drop({ columns: ["name"], axis: 1, inplace: true });
 					console.log("timeData" , timeData.values);
 					var user_time = timeData.values[0][2];

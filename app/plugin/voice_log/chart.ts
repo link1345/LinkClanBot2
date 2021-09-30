@@ -44,19 +44,20 @@ export async function most_oldMonth(config: Object) : Promise< Object >{
 }
 
 
-export async function table_MakeTimeList(client: Discord.Client, MonthFileList: Array<string>, Lables: Array<string> , RoleList: Array<String> ) :  Promise<dfd.DataFrame>{
-	var members : Array<Discord.GuildMember>;
+export async function table_MakeTimeList(client: Discord.Client, MonthFileList: Array<string>, Lables: Array<string> , RoleList: Array<string> ) :  Promise<dfd.DataFrame>{
+	var members : Discord.Collection<string, Discord.GuildMember> = new Discord.Collection;
+	try{
 	if( MonthFileList ){
 		members = await UserRoleMember(client, RoleList);
-		//console.log("members === " , members);
+		console.log("members === " , members);
 	}
-	if (members == null){
+	if (members == null || members.size == 0 ){
 		return null;
 	}
 
 	var all_df: dfd.DataFrame = null;
 	for( var fileName of MonthFileList ){
-		var df : dfd.DataFrame = await one_MakeTimeList(client,fileName, members);
+		var df : dfd.DataFrame = await one_MakeTimeList(client, fileName, members);
 
 		if ( df == null){
 			break;
@@ -77,6 +78,9 @@ export async function table_MakeTimeList(client: Discord.Client, MonthFileList: 
 			all_df = dfd.merge({ "left": all_df , "right": df, "on": ["name"]})
 		}
 	}
+	}catch(error){
+		console.log(error);
+	}
 
 	//console.log("all_df === " , all_df);
 
@@ -84,44 +88,42 @@ export async function table_MakeTimeList(client: Discord.Client, MonthFileList: 
 }
 
 // ロールに合うメンバーを返す。
-export async function UserRoleMember( client: Discord.Client, RoleList: Array<String>) : Promise<Array<Discord.GuildMember>>{
+export async function UserRoleMember( client: Discord.Client, RoleList: Array<string>) : Promise< Discord.Collection<string, Discord.GuildMember> >{
 	//var hit = 0;
 
 	await client.guilds.fetch();
 	var guilds = client.guilds.cache.map(guild => guild);
-
-	var return_Members: Array<Discord.GuildMember> = [];
+	
+	var return_Members: Discord.Collection<string, Discord.GuildMember> = new Discord.Collection;
 	for( var guild_item of guilds){
-		await guild_item.members.fetch();
-		var members = guild_item.members.cache.map(guildmember => guildmember);
-		for(var member_item of members){
-			await member_item.fetch();
-			var role_userList = member_item.roles.cache.map(role => role.id);
-
-			for(var s_Role of role_userList){
-				if( RoleList.includes(s_Role) ){
-					return_Members.push(member_item);
-					//hit = 1;
-					break;
-				}
-			}
-			//if (hit == 1) break;
+		guild_item.roles.fetch();
+		for(var s_Role of RoleList){
+			//console.log("s_Role ==>" , s_Role);
+			var member = guild_item.roles.cache.get(s_Role).members;
+			//console.log("member ==>" , member);
+			return_Members = return_Members.concat( member );
 		}
-		//if (hit == 1) break;
 	}
+
+	for (let value of return_Members.values()) {
+		value.fetch();
+	}
+
 	return return_Members;
 }
 
-export async function MakeTimeList( client: Discord.Client, Datafile_path: string , RoleList: Array<String> ) :  Promise<dfd.DataFrame>{
+export async function MakeTimeList( client: Discord.Client, Datafile_path: string , RoleList: Array<string> ) :  Promise<dfd.DataFrame>{
 	var members = await UserRoleMember(client, RoleList);
 	return await one_MakeTimeList(this.fix_client, Datafile_path, members);
 }
 
-export async function one_MakeTimeList( client: Discord.Client, Datafile_path: string , members : Array<Discord.GuildMember>  ) :  Promise<dfd.DataFrame>{
+export async function one_MakeTimeList( client: Discord.Client, Datafile_path: string , members : Discord.Collection<string, Discord.GuildMember>  ) :  Promise<dfd.DataFrame>{
 
 	// ユーザーリスト取得
 	//var members = await UserRoleMember(client, RoleList);
 	//console.log("out : " , members );
+
+	try{
 
 	var members_id =  members.map(member => member.id) ;
 	var members_name =  members.map(member => member.user.username + "#" + member.user.discriminator) ;
@@ -209,6 +211,9 @@ export async function one_MakeTimeList( client: Discord.Client, Datafile_path: s
 
 	//console.log("return => " , data);
 
+	}catch(error){
+		console.log(error);
+	}
 
 	return data;
 }
