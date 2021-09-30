@@ -124,10 +124,11 @@ export class main extends PluginBase {
 				var item_oldMonthList_label = this.oldMonthList["label"].slice( Number(interaction.options.get("month").value) );
 				//console.log(item_oldMonthList_label);
 
-				table = await chart.table_MakeTimeList( this.fix_client ,  item_oldMonthList_fileList  ,  item_oldMonthList_label , this.config["Periodic_output_Role"] );
+				//table = await chart.table_MakeTimeList( this.fix_client ,  item_oldMonthList_fileList  ,  item_oldMonthList_label , this.config["Periodic_output_Role"] );
+				table = await chart.table_MakeTimeList( this.fix_client ,  item_oldMonthList_fileList  ,  item_oldMonthList_label , [interaction.options.get("role").role.id] );
 				//}
 				if( table == null ){
-					await interaction.editReply({ content: "**【ERROR】**データを加工してファイル出力できませんでした。" });
+					await interaction.editReply({ content: "**【ERROR】**データを加工してファイル出力できませんでした。もしかしたら、該当メンバーが居ないかも…。" });
 				}else{
 					var csv_file = this.config["processed_output_TimeLine_folderpath"] + "anaylze.csv";
 					await table.to_csv(csv_file);
