@@ -48,8 +48,7 @@ export async function table_MakeTimeList(client: Discord.Client, MonthFileList: 
 	var members : Array<Discord.GuildMember>;
 	if( MonthFileList ){
 		members = await UserRoleMember(client, RoleList);
-		
-		console.log("members === " , members);
+		//console.log("members === " , members);
 	}
 	if (members == null){
 		return null;
@@ -129,7 +128,7 @@ export async function one_MakeTimeList( client: Discord.Client, Datafile_path: s
 
 	if ( members_id.length == 0 ) return;
 
-	console.log("member_list ===> " , members_id);
+	//console.log("member_list ===> " , members_id);
 
 	// ログを取得
 	var baseData = yaml.load(fs.readFileSync(Datafile_path, 'utf8'));
@@ -150,49 +149,53 @@ export async function one_MakeTimeList( client: Discord.Client, Datafile_path: s
 
 	//console.log("return => " , return_data);
 
-	for(var item of baseData){
-		var indexNum = 0;
-		indexNum = members_id.indexOf(item['member.id']);
-		if(indexNum == -1){
-			// 現在の鯖に存在しない人は、処理しない。
-			continue;
-		}
+	if(baseData != [] && baseData != null){
 
-		console.log("index_Num ===> " , indexNum );
-
-		if ( item["flag"] == "entry" ){
-			return_data["start"][indexNum] = item["timestanp"];
-		}
-		else if (item["flag"] == "exit" ){
-			
-			// スタートがないのに、エンドがある場合
-			if(return_data["start"][indexNum] == null){
-				// そもそも入室してない扱いにする
+		for(var item of baseData){
+			var indexNum = 0;
+			indexNum = members_id.indexOf(item['member.id']);
+			if(indexNum == -1){
+				// 現在の鯖に存在しない人は、処理しない。
 				continue;
 			}
 
-			return_data["exit"][indexNum] = item["timestanp"];
+			//console.log("index_Num ===> " , indexNum );
 
-			var a_stanp : Date = new Date( Number(return_data["start"][indexNum]) );
-			var b_stanp : Date = new Date( Number(return_data["exit"][indexNum]) );
-
-			var c_time : Date = new Date( b_stanp.getTime() - a_stanp.getTime() );
-			if( return_data["time"][indexNum] == null){
-				return_data["time"][indexNum] = c_time.getTime();
-			}else{
-				return_data["time"][indexNum] = ( new Date( (new Date( return_data["time"][indexNum] )).getTime() + c_time.getTime() ) ).getTime();
-				//console.log(" time => "  , return_data["time"][indexNum]  ); 
+			if ( item["flag"] == "entry" ){
+				return_data["start"][indexNum] = item["timestanp"];
 			}
+			else if (item["flag"] == "exit" ){
+				
+				// スタートがないのに、エンドがある場合
+				if(return_data["start"][indexNum] == null){
+					// そもそも入室してない扱いにする
+					continue;
+				}
 
-			return_data["start"][indexNum] = null;
-			return_data["exit"][indexNum] = null;
-		} 
+				return_data["exit"][indexNum] = item["timestanp"];
+
+				var a_stanp : Date = new Date( Number(return_data["start"][indexNum]) );
+				var b_stanp : Date = new Date( Number(return_data["exit"][indexNum]) );
+
+				var c_time : Date = new Date( b_stanp.getTime() - a_stanp.getTime() );
+				if( return_data["time"][indexNum] == null){
+					return_data["time"][indexNum] = c_time.getTime();
+				}else{
+					return_data["time"][indexNum] = ( new Date( (new Date( return_data["time"][indexNum] )).getTime() + c_time.getTime() ) ).getTime();
+					//console.log(" time => "  , return_data["time"][indexNum]  ); 
+				}
+
+				return_data["start"][indexNum] = null;
+				return_data["exit"][indexNum] = null;
+			} 
+		}
+		
 	}
-	
+
 	var num = 0;
 	for( var time_item of return_data["time"] ){
 		// getTime は、ミリ秒が帰ってくる。ので…1000分の１で1秒となる。
-		if(return_data["time"][num] != 0 || return_data["time"][num] != null){
+		if( time_item != 0 && time_item != null && time_item != NaN ){
 			return_data["time"][num] = (new Date(time_item)).getTime() / 1000 / 60 / 60 ;
 		}else{
 			return_data["time"][num] = 0;
