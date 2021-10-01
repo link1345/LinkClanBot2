@@ -53,18 +53,49 @@ export async function getUserPoint(sheet : GoogleSpreadsheetWorksheet, id_point 
 		//console.log( "id " , oldMember.user.id );
 		//console.log( "cell " , cell.value );
 
-		if( String(UserID) === String(cell.value) ) {
+		if( cell == null || String(cell.value) == "" || String(cell.value) == "null" || String(cell.value) == null ){
+			null_count += 1;
+		}
+		else if( String(UserID) === String(cell.value) ) {
 			user_point = y;	
 			break;
 		}
+	}
 
-		if( String(cell.value) == "" || String(cell.value) == null ){
+	//console.log( "user_point  " , user_point );
+	return user_point;
+}
+
+export async function getUserList(sheet : GoogleSpreadsheetWorksheet, id_point : Number) : Promise<Array<string>> {
+	var user_list : Array<string> = [];
+
+	await sheet.loadCells({
+		startRowIndex: 0, endRowIndex : sheet.rowCount,
+		startColumnIndex:id_point, 
+	});
+	//console.log( "sheet.columnCount " , sheet.rowCount );
+
+	var null_count = 0;
+	for( var y = 0; y < sheet.rowCount ; y++ ){
+		var cell = sheet.getCell(y, id_point);
+		console.log(cell.value);
+		
+		// 5つ空きがあれば…と言う処理を外して置く
+		//if(null_count >= 5) {
+		//	break;
+		//}
+		if( cell == null || String(cell.value) == "" || String(cell.value) == "null" || String(cell.value) == null ){
 			null_count += 1;
+			break;
+		}
+		else{
+			var cell = sheet.getCell(y, id_point);
+			user_list.push(cell.value);
 		}
 	}
 
-	console.log( "user_point  " , user_point );
-	return user_point;
+	user_list.shift();
+	return user_list;
 }
 
 

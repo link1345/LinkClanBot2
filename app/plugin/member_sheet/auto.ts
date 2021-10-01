@@ -52,6 +52,8 @@ export class main extends PluginBase  {
 	// oldMemberをnullにすると、IDを検索して全修正を掛けてくれます。
 	private async MemberDataUp(client: Discord.Client, config: Object, oldMember:Discord.GuildMember, newMember:Discord.GuildMember){
 		
+		try{
+
 		if( this.tabel_discordDataPoint["discord.Member.id"].length === 0 ){		
 			console.log("【ERROR】IDを記載する列がありません。");
 			
@@ -120,8 +122,8 @@ export class main extends PluginBase  {
 			}
 
 			// 新規追加
-			//if( new_item.length !== new_member_role.length &&  old_item.length === old_member_role.length ){
-			if( new_item.length > old_item.length ){
+			if( new_item.length !== new_member_role.length &&  old_item.length === old_member_role.length ){
+			//if( new_item.length > old_item.length ){
 				var text : string = "";
 				if(config["SheetIndex"][index]["AddMessage"] !== ""){
 					text = "**【自動通知】**" + channelSend.text_check(newMember.displayName) + channelSend.text_check(config["SheetIndex"][index]["AddMessage"]) ;
@@ -133,8 +135,8 @@ export class main extends PluginBase  {
 				}
 			}
 			// 剥奪
-			//else if( new_item.length === new_member_role.length &&  old_item.length !== old_member_role.length ){
-			else if( new_item.length < old_item.length ){
+			else if( new_item.length === new_member_role.length &&  old_item.length !== old_member_role.length ){
+			//else if( new_item.length < old_item.length ){
 				if( config["SheetIndex"][index]["DeleteMessage"] !== "" ){
 					var text : string = "【自動通知】" + channelSend.text_check(newMember.displayName) + config["SheetIndex"][index]["DeleteMessage"] ;
 					text = channelSend.text_check(text);
@@ -149,48 +151,46 @@ export class main extends PluginBase  {
 		if(old_RoleHitCount === 0 && RoleHitCount === 0) return false;
 		if(RoleHitCount === 0) deleteMemberFlag = true;
 
-		if( oldMember != null ){
-			// displayName
-			for( var index of this.tabel_discordDataPoint["discord.Member.display_name"] ){
-				setData[index] = newMember.displayName;
-				CheckData[index] = true;
-			}
-			if(oldMember.displayName != newMember.displayName){
-				text = "**【自動通知】**" + channelSend.text_check(oldMember.displayName) + "さんが、名前を変えて..." + channelSend.text_check(newMember.displayName) + "になりました。" ;
-				console.log(text);
-				for( var item of await channelSend.ChannelList(client, config["AutoEvent_Message_channelID"]) ){
-					console.log(item);
-					item.send({ content: text });
-				}
-			}
-			// name
-			for( var index of this.tabel_discordDataPoint["discord.Member.name"] ){
-				setData[index] = newMember.user.username;
-				CheckData[index] = true;
-			}
-			if(oldMember.user.username != newMember.user.username){
-				text = "**【自動通知】**" + channelSend.text_check(oldMember.user.username) + "さんが、システム名前を変えて...  " + channelSend.text_check(newMember.user.username) + "になりました。" ;
-				console.log(text);
-				for( var item of await channelSend.ChannelList(client, config["AutoEvent_Message_channelID"]) ){
-					console.log(item);
-					item.send({ content: text });
-				}
-			}
-			// discriminator
-			//if(oldMember.user.discriminator != newMember.user.discriminator){
-				for( var index of this.tabel_discordDataPoint["discord.Member.discriminator"] ){
-					setData[index] = String(newMember.user.discriminator);
-					CheckData[index] = true;
-				}
-			//}
-			// discriminator
-			//if(oldMember.user.id != newMember.user.id){
-				for( var index of this.tabel_discordDataPoint["discord.Member.id"] ){
-					setData[index] = String(newMember.user.id);
-					CheckData[index] = true;
-				}
-			//}
+		// displayName
+		for( var index of this.tabel_discordDataPoint["discord.Member.display_name"] ){
+			setData[index] = newMember.displayName;
+			CheckData[index] = true;
 		}
+		if( oldMember != null && (oldMember.displayName != newMember.displayName) ){
+			text = "**【自動通知】**" + channelSend.text_check(oldMember.displayName) + "さんが、名前を変えて..." + channelSend.text_check(newMember.displayName) + "になりました。" ;
+			console.log(text);
+			for( var item of await channelSend.ChannelList(client, config["AutoEvent_Message_channelID"]) ){
+				console.log(item);
+				item.send({ content: text });
+			}
+		}
+		// name
+		for( var index of this.tabel_discordDataPoint["discord.Member.name"] ){
+			setData[index] = newMember.user.username;
+			CheckData[index] = true;
+		}
+		if( oldMember != null && (oldMember.user.username != newMember.user.username) ){
+			text = "**【自動通知】**" + channelSend.text_check(oldMember.user.username) + "さんが、システム名前を変えて...  " + channelSend.text_check(newMember.user.username) + "になりました。" ;
+			console.log(text);
+			for( var item of await channelSend.ChannelList(client, config["AutoEvent_Message_channelID"]) ){
+				console.log(item);
+				item.send({ content: text });
+			}
+		}
+		// discriminator
+		//if(oldMember.user.discriminator != newMember.user.discriminator){
+			for( var index of this.tabel_discordDataPoint["discord.Member.discriminator"] ){
+				setData[index] = String(newMember.user.discriminator);
+				CheckData[index] = true;
+			}
+		//}
+		// discriminator
+		//if(oldMember.user.id != newMember.user.id){
+			for( var index of this.tabel_discordDataPoint["discord.Member.id"] ){
+				setData[index] = String(newMember.user.id);
+				CheckData[index] = true;
+			}
+		//}
 
 		console.log("setData  " , setData);
 
@@ -224,8 +224,8 @@ export class main extends PluginBase  {
 		if( newMemberFlag === false && deleteMemberFlag === false ){
 
 			var user_point = null;
-			if( oldMember == null) user_point = await google.getUserPoint(sheet, id_point, oldMember.user.id);
-			else user_point = await google.getUserPoint(sheet, id_point, newMember.user.id);
+			if( oldMember == null) user_point = await google.getUserPoint(sheet, id_point, newMember.user.id);
+			else user_point = await google.getUserPoint(sheet, id_point, oldMember.user.id);
 
 			if(user_point == -1) newMemberFlag = true;			
 			// ここで編集
@@ -244,6 +244,8 @@ export class main extends PluginBase  {
 
 						if(setData[x] !== cell.value ){
 							cell.value = setData[x];
+							cell.textFormat = {bold: false}; // 今の所、名簿の全データは文字列として保管。
+							
 						}
 					}
 					await sheet.saveUpdatedCells();
@@ -258,20 +260,23 @@ export class main extends PluginBase  {
 			await sheet.saveUpdatedCells();
 		}
 		// ここで削除
-		else if( deleteMemberFlag == true ){
-			
+		else if( deleteMemberFlag == true ){			
 			var user_point = null;
-			if( oldMember == null) user_point = await google.getUserPoint(sheet, id_point, oldMember.user.id);
-			else user_point = await google.getUserPoint(sheet, id_point, newMember.user.id);
+			if( oldMember == null) user_point = await google.getUserPoint(sheet, id_point, newMember.user.id);
+			else user_point = await google.getUserPoint(sheet, id_point, oldMember.user.id);
 
 			if(user_point !== -1){
 				const rows = await sheet.getRows();
 				var row = rows[user_point-1];
-				//console.log(row);
 				await row.delete();
 			}
 
 		}
+
+		}catch(error){
+			console.log(error);
+		}
+
 		return true;
 	}
 
@@ -294,7 +299,7 @@ export class main extends PluginBase  {
 
 		// ここで削除
 		var user_point = await google.getUserPoint(sheet, id_point, Member.user.id);
-		if(user_point !== -1){
+		if(user_point != -1){
 			const rows = await sheet.getRows();
 			var row = rows[user_point-1];
 			//console.log(row);
@@ -303,6 +308,37 @@ export class main extends PluginBase  {
 
 		return true;
 	}
+
+
+	private async NullMemberDelete(client: Discord.Client, config: Object, Members: Discord.Collection<string, Discord.GuildMember>) {
+		
+		var id_point = this.tabel_discordDataPoint["discord.Member.id"][0];
+		var doc : GoogleSpreadsheet = await google.getDocment(config);
+		var sheet : GoogleSpreadsheetWorksheet = doc.sheetsByIndex[0];
+
+		// ここで削除
+		var database_UserList = await google.getUserList(sheet, id_point);
+		var discode_UserList = Members.map(member => member.id);
+
+		//database_UserList.
+		//console.log("database_UserList >> " , database_UserList );
+		var delete_item = database_UserList.filter(item => discode_UserList.indexOf(item) == -1);
+		//console.log(delete_item);
+		delete_item.reverse();
+		for(var item of delete_item){
+			var user_point = database_UserList.indexOf(item);
+			//console.log(user_point);
+			if(user_point != -1){
+				const rows = await sheet.getRows();
+				var row = rows[user_point];
+				//console.log(row);
+				await row.delete();
+			}
+		}
+
+
+	}
+
 
 
 	async guildMemberUpdate(client: Discord.Client, config: Object, oldMember:Discord.GuildMember, newMember:Discord.GuildMember ){
@@ -319,9 +355,14 @@ export class main extends PluginBase  {
 	async interactionCreate(client: Discord.Client, config: Object, interaction: Discord.Interaction){
 		if (!interaction.isCommand()) return;
 		
-		if( interaction.commandName === "ConsistencyCheck" ){
+		if( interaction.commandName === "check-consistency" ){
+			//try{
+
+			await interaction.reply("【報告】少々お待ちください。" + channelSend.text_check("_(:3」∠)_") );
 
 			var member_list : Discord.Collection<string, Discord.GuildMember> = new Discord.Collection;
+
+			//console.log( this.tabel_discordDataPoint["discord.Member.role"] );
 
 			await client.guilds.fetch();
 			var guild = client.guilds.cache.map(guild => guild);
@@ -329,20 +370,37 @@ export class main extends PluginBase  {
 			for(var guild_item of guild ){
 				await guild_item.roles.fetch();
 
-				for( var database_Point of this.tabel_discordDataPoint["discord.Member.id"] ){
-					for( var database_role of config["SheetIndex"][database_Point]["roles"]){
+				for( var database_Point of this.tabel_discordDataPoint["discord.Member.role"] ){
+					for( var database_role of config["SheetIndex"][ Number(database_Point) ]["roles"]){
+						console.log("role number : " , database_role );
 						var t_item = guild_item.roles.cache.filter(role => role.id == database_role).map(role => role.members);
+						console.log("member data : " , t_item );
 						for( var item of t_item ){
-							member_list.concat( item );
+							member_list = member_list.concat( item );
 						}
 					}
 				}	
 			}
+
+			await interaction.editReply("【報告】現時点での存在する人の処理中" + channelSend.text_check("(;´･ω･)") );
 			
+			// 現時点で存在する人の調査
 			for(var member of member_list.values()){
 				await member.fetch();
-				this.MemberDataUp(client, config, null, member);
+				//console.log("member name : " , member.displayName);
+				await this.MemberDataUp(client, config, null, member);
 			}
+			
+			await interaction.editReply("【報告】名簿記載メンバーではない人の削除中" + channelSend.text_check("(´；ω；｀)ｳｯ…") );
+
+			// 名簿に存在しているが、名簿記載メンバーではない人の削除
+			await this.NullMemberDelete(client,config, member_list);
+
+			await interaction.editReply("【報告】整合性調査が終わりました。" + channelSend.text_check("＼(^o^)／ｵﾜﾀ") );
+
+		//}catch(error){
+		//	console.log(error);
+		//}
 
 		}
 	}
