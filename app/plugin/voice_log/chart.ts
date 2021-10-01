@@ -96,7 +96,7 @@ export async function UserRoleMember( client: Discord.Client, RoleList: Array<st
 	
 	var return_Members: Discord.Collection<string, Discord.GuildMember> = new Discord.Collection;
 	for( var guild_item of guilds){
-		guild_item.roles.fetch();
+		await guild_item.roles.fetch();
 		for(var s_Role of RoleList){
 			//console.log("s_Role ==>" , s_Role);
 			var member = guild_item.roles.cache.get(s_Role).members;
@@ -106,7 +106,7 @@ export async function UserRoleMember( client: Discord.Client, RoleList: Array<st
 	}
 
 	for (let value of return_Members.values()) {
-		value.fetch();
+		await value.fetch();
 	}
 
 	return return_Members;

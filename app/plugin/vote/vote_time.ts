@@ -59,7 +59,7 @@ async function f_message(client: Discord.Client, value_subject_vote ) : Promise<
 		await channel_text.messages.fetch();
 		message_m = channel_text.messages.cache.get(value_subject_vote["MessageID"]);
 	}
-	message_m.fetch();
+	await message_m.fetch();
 	return message_m;
 }
 

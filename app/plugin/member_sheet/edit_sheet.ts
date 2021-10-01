@@ -37,12 +37,12 @@ function discordDataPoint(config){
 
 export async function EditSheet(client: Discord.Client, config: Object, editUser: Discord.User, interaction: Discord.CommandInteraction){
 	try{
-		interaction.reply("【報告】名簿編集中...");
+		await interaction.reply("【報告】名簿編集中...");
 
 		var indexPoint = getType("text",config["SheetIndex"]);
 		var IDPoint = getType("discord.Member.id",config["SheetIndex"]);
 		if ( IDPoint == null ) {
-			await interaction.reply("【ERROR】なんか名簿がおかしいみたい。管理者に相談してね！");
+			await interaction.editReply("【ERROR】なんか名簿がおかしいみたい。管理者に相談してね！");
 			return false;
 		};
 
@@ -71,7 +71,7 @@ export async function EditSheet(client: Discord.Client, config: Object, editUser
 		// 既にあるユーザ検索して、操作。
 		var user_point = await google.getUserPoint(sheet, id_point , editUser.id);
 		if(user_point == -1){
-			await interaction.reply("【ERROR】" + fChannle.text_check(editUser.username) + "#" + fChannle.text_check(editUser.discriminator) + "さんは名簿に存在しないみたい...。管理者に相談してね！");
+			await interaction.editReply("【ERROR】" + fChannle.text_check(editUser.username) + "#" + fChannle.text_check(editUser.discriminator) + "さんは名簿に存在しないみたい...。管理者に相談してね！");
 			return false;
 		}
 
