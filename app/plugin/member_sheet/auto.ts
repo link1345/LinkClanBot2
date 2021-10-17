@@ -104,7 +104,9 @@ export class main extends PluginBase  {
 			/// ここに、間違っているよ！というDiscordメッセージを出す。
 			for( var item of await channelSend.ChannelList(client, config["AutoEvent_ERRORMessage_channelID"]) ){
 				item.send({ content: "【ERROR】IDを記載する列がありません。" });
+				break;
 			}
+			return false;
 		}
 
 		// ------------
@@ -299,6 +301,7 @@ export class main extends PluginBase  {
 			/// ここに、間違っているよ！というDiscordメッセージを出す。
 			for( var item of await channelSend.ChannelList(client, config["AutoEvent_ERRORMessage_channelID"]) ){
 				item.send({ content: "【ERROR】表の形式が間違っています。" });
+				break;
 			}
 			return false;
 		}
@@ -382,7 +385,9 @@ export class main extends PluginBase  {
 			/// ここに、間違っているよ！というDiscordメッセージを出す。
 			for( var item of await channelSend.ChannelList(client, config["AutoEvent_ERRORMessage_channelID"]) ){
 				item.send({ content: "【ERROR】IDを記載する列がありません。" });
+				break;
 			}
+			return false;
 		}
 
 		// ------------
