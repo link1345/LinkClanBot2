@@ -23,17 +23,29 @@ RoleID_List:
 ChannelID_List:
  一般 : &Runk1_Channel '000000000000000000'
  上位 : &Runk2_Channel '000000000000000000'
-
+ 
 # シートのID
-GOOGLE_SPREADSHEET_KEY: '-------------------------------------------'
-SPREADSHEET_URL: "-------------------------------------------"
+GOOGLE_SPREADSHEET_KEY: '----------------------------------------'
+SPREADSHEET_URL: "https://docs.google.com/spreadsheets/d/----------------------------------------/edit#gid=0"
 
 # シートの認証ファイル(json)
-credentials_filepath: "./config/plugin/-------------------------------------------.json"
+credentials_filepath: "./config/plugin/---------------.json"
+
+Periodic_output_Channel:
+ - *Runk2_Channel
+
+output_TimeLine_folderpath: "./analyze/voice_log/raw/"
+output_TimeLine_filepath: "./analyze/voice_log/raw/now.yml"
+processed_output_TimeLine_folderpath: "./analyze/voice_log/proc/"
+
 
 # -- GoogleSheet 
 # Column list
 SheetIndex:
+ - type: "text"
+   label: "test"
+   name: "test"
+   description: "test"
    flag: "active"
  - type: "text"
    label: "呼び名"
@@ -62,7 +74,7 @@ SheetIndex:
    label: "役職:仮入隊"
    name: "role3"
    AddMessage: "さんが仮入隊しました。（ ＾ω＾）"
-   DeleteMessage: "さんが入隊希望を取り消しました。"
+   DeleteMessage: "さんの入隊希望を取り消しました。"
    roles:
     - *Runk1_Role
  - type: "discord.Member.id" 
@@ -105,6 +117,21 @@ SheetIndex:
    label: "Twitter\nアカウントURL"
    name: "twitter_url"
    description: "TwitterアカウントURL"
+ - type: "discord.time.0"
+   label: "[今月]Discord参加時間"
+   name: "discord_time_0"
+ - type: "discord.time.1"
+   label: "[1ヶ月前]Discord参加時間"
+   name: "discord_time_1"
+ - type: "discord.time.2"
+   label: "[2ヶ月前]Discord参加時間"
+   name: "discord_time_2"
+ - type: "discord.time.3"
+   label: "[3ヶ月前]Discord参加時間"
+   name: "discord_time_3"
+ - type: "discord.Member.role.lasttime"
+   label: "最終ロール追加日時"
+   name: "discord_role_last"
 
 # シートを上位権限で変更できるロールIDは？
 SheetAdminRoleID :
@@ -149,6 +176,10 @@ slashCommand :
       description : '誰の情報を書き換えますか？'
       type : 6
       required : true
+ - name : 'check-consistency'
+   description : '名簿の整合性確認'
+   type : 1
+   defaultPermission : false
 
 slashCommand_permissions :
  - name : "edit-memberlist"
@@ -161,6 +192,11 @@ slashCommand_permissions :
    - id : *Runk3_Role
      type : 'ROLE'
      permission : true
+ - name : "check-consistency"
+   option :
+   - id : *Runk3_Role
+     type : 'ROLE'
+     permission : true
 
 slashCommand_channel_permisson :
  - name : 'edit-memberlist'
@@ -168,6 +204,10 @@ slashCommand_channel_permisson :
    option : 
     - id : *Runk1_Channel
  - name : 'admin-edit-memberlist'
+   defaultPermission : false
+   option : 
+    - id : *Runk2_Channel
+ - name : 'check-consistency'
    defaultPermission : false
    option : 
     - id : *Runk2_Channel
