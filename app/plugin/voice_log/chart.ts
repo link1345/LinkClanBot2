@@ -10,14 +10,14 @@ import { DefaultDeserializer } from 'v8';
 
 import * as dfd from 'danfojs-node';
 
-export async function most_oldMonth(config: Object) : Promise< Object >{
+export async function most_oldMonth(path: string) : Promise< Object >{
 
 	var labels = []
 	var fileNameList = []
 
-	console.log("config output_TimeLine_folderpath : " , config)
+	console.log("config output_TimeLine_folderpath : " , path)
 
-	var files = await fs.promises.readdir( config["output_TimeLine_folderpath"] );
+	var files = await fs.promises.readdir( path );
 
 	//console.log("files : " , files)
 
@@ -27,7 +27,7 @@ export async function most_oldMonth(config: Object) : Promise< Object >{
 		var year  = move_day.getFullYear();
 		var month = ("0"+ Number(move_day.getMonth() + 1) ).slice(-2);
 
-		var fileName = config["output_TimeLine_folderpath"] + year.toString() + month.toString() + ".yml" ;
+		var fileName = path + year.toString() + month.toString() + ".yml" ;
 		console.log(fileName);
 
 		var find_id = files.indexOf(  year.toString() + month.toString() + ".yml"  );

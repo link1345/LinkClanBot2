@@ -72,7 +72,7 @@ export class main extends PluginBase {
 		var Data : Discord.ApplicationCommandData = commandItem;
 		//var OptionData : Discord.ApplicationCommandOptionData = {type:3, name:"", description:"", choices:[]};
 		
-		var oldlist : Object = await chart.most_oldMonth(config);
+		var oldlist : Object = await chart.most_oldMonth( config["output_TimeLine_folderpath"] );
 		this.oldMonthList = oldlist;
 		for( var o_item of Data["options"]){
 			if( o_item["name"] != "month" ) continue;

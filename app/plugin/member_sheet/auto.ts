@@ -13,6 +13,10 @@ import * as google from './google_sheet'
 import * as channelSend from '../../util/channel_send';
 import { sheets } from 'googleapis/build/src/apis/sheets';
 
+import * as chart from '../voice_log/chart';
+import * as cron from 'node-cron';
+import { memoryUsage } from 'process';
+
 export class main extends PluginBase  {
 	
 	tabel_discordDataPoint: Object;
@@ -26,8 +30,13 @@ export class main extends PluginBase  {
 			"discord.Member.name",
 			"discord.Member.display_name",
 			"discord.Member.discriminator",
+			"discord.Member.role.lasttime",
 			"text",
 		];
+
+		for(var i = 0; i <= 12 ; i++){ // 0 ~ 12
+			discord_list.push( "discord.time." + String(i) );
+		}
 
 		// 各項目がどこにあるのかを確認。
 		this.tabel_discordDataPoint = new Object();
@@ -41,7 +50,43 @@ export class main extends PluginBase  {
 		}
 		//console.log( this.tabel_discordDataPoint );
 
+		
+		cron.schedule('0 0 0 1,15,18 * *', () => this.sheet_periodic_output());
 	}
+
+
+	// 月一で、名簿全検索を行う。
+	// と言うのは名目上で、
+	async sheet_periodic_output(){
+
+		var channels = await channelSend.ChannelList(this.fix_client, this.config["Periodic_output_Channel"] );
+		
+		if(channels.length != 0)
+			var channel = channels[0];
+
+		var message : Discord.Message;
+		if(channels.length != 0)
+			message = await channel.send("**【定期:名簿更新 ⇒ 処理中】**少々お待ちください。" + channelSend.text_check("_(:3」∠)_") );
+
+		//console.log( this.tabel_discordDataPoint["discord.Member.role"] );
+		var member_list = await this.getMemberList(this.fix_client, this.config);
+
+		if(channels.length != 0)
+			await message.edit("**【定期:名簿更新 ⇒ 処理中】**現時点での存在する人の処理中" + channelSend.text_check("(;´･ω･)") );
+		
+		await this.setSheetData_no1(this.fix_client, this.config, member_list);
+		
+		if(channels.length != 0)
+			await message.edit("**【定期:名簿更新 ⇒ 処理中】**名簿記載メンバーではない人の削除中" + channelSend.text_check("(´；ω；｀)ｳｯ…") );
+
+		// 名簿に存在しているが、名簿記載メンバーではない人の削除
+		await this.NullMemberDelete(this.fix_client, this.config, member_list);
+		
+		if(channels.length != 0)
+			await message.edit("**【定期:名簿更新 ⇒ 報告】**整合性調査が終わりました。" + channelSend.text_check("＼(^o^)／ｵﾜﾀ") );
+
+	}
+
 
 	async ready(client: Discord.Client, config: Object){
 		await super.ready(client, config);
@@ -50,8 +95,7 @@ export class main extends PluginBase  {
 
 
 	// oldMemberをnullにすると、IDを検索して全修正を掛けてくれます。
-	private async MemberDataUp(client: Discord.Client, config: Object, oldMember:Discord.GuildMember, newMember:Discord.GuildMember){
-		
+	private async MemberDataUp(client: Discord.Client, config: Object, oldMember:Discord.GuildMember, newMember:Discord.GuildMember, filepath_list_oldMonth: Array<string> = null){
 		try{
 
 		if( this.tabel_discordDataPoint["discord.Member.id"].length === 0 ){		
@@ -123,7 +167,19 @@ export class main extends PluginBase  {
 
 			// 新規追加
 			if( new_item.length !== new_member_role.length &&  old_item.length === old_member_role.length ){
-			//if( new_item.length > old_item.length ){
+
+				// ロール 新規追加履歴を記録。
+				for( var lasttime_index of this.tabel_discordDataPoint["discord.Member.role.lasttime"] ){
+					var last_date = new Date();
+
+					var year  = last_date.getFullYear();
+					var month = ("0"+ Number(last_date.getMonth() + 1) ).slice(-2);
+					var day   = ("0"+last_date.getDate() ).slice(-2);
+
+					setData[lasttime_index] = String( year ) + "/" + String(month) + "/" + String(day);
+					CheckData[lasttime_index] = true;
+				}
+
 				var text : string = "";
 				if(config["SheetIndex"][index]["AddMessage"] !== ""){
 					text = "**【自動通知】**" + channelSend.text_check(newMember.displayName) + channelSend.text_check(config["SheetIndex"][index]["AddMessage"]) ;
@@ -136,11 +192,9 @@ export class main extends PluginBase  {
 			}
 			// 剥奪
 			else if( new_item.length === new_member_role.length &&  old_item.length !== old_member_role.length ){
-			//else if( new_item.length < old_item.length ){
 				if( config["SheetIndex"][index]["DeleteMessage"] !== "" ){
-					var text : string = "【自動通知】" + channelSend.text_check(newMember.displayName) + config["SheetIndex"][index]["DeleteMessage"] ;
-					text = channelSend.text_check(text);
-
+					var text : string = "**【自動通知】**" + channelSend.text_check(newMember.displayName) + config["SheetIndex"][index]["DeleteMessage"] ;
+				
 					for( var item of await channelSend.ChannelList(client, config["AutoEvent_Message_channelID"]) ){
 						item.send({ content: text });
 					}
@@ -148,7 +202,11 @@ export class main extends PluginBase  {
 			}
 
 		}
+
+		// 前のロール・今のロールに該当がない場合は、処理しない。
 		if(old_RoleHitCount === 0 && RoleHitCount === 0) return false;
+		
+		// 前のロールは存在するが、今のロールに該当がない場合は、名簿から削除。
 		if(RoleHitCount === 0) deleteMemberFlag = true;
 
 		// displayName
@@ -184,11 +242,47 @@ export class main extends PluginBase  {
 				CheckData[index] = true;
 			}
 		//}
-		// discriminator
+		// ID
 		//if(oldMember.user.id != newMember.user.id){
 			for( var index of this.tabel_discordDataPoint["discord.Member.id"] ){
 				setData[index] = String(newMember.user.id);
 				CheckData[index] = true;
+			}
+		//}
+
+		// 時間取得
+		// time
+		//if(oldMember.user.id != newMember.user.id){
+			// ユーザーリスト作成(とっても、自分だけだけど...)
+			var user_list : Discord.Collection<string, Discord.GuildMember> = new Discord.Collection ;
+			user_list.set(newMember.user.id, newMember as Discord.GuildMember);
+
+			// ファイルリスト作成
+			if(filepath_list_oldMonth == null){
+				var oldlist = await chart.most_oldMonth( config["output_TimeLine_folderpath"] );
+				filepath_list_oldMonth = oldlist["fileList"];
+				filepath_list_oldMonth.unshift(config["output_TimeLine_filepath"]);
+			}
+
+			for( var i = 0; i <= 12 && i < filepath_list_oldMonth.length-1 ; i++){
+
+				for( var index of this.tabel_discordDataPoint["discord.time." + i] ){
+
+					//
+					var timeData = await chart.one_MakeTimeList(client, filepath_list_oldMonth[i], user_list);
+					var user_time = timeData.values[0][2];
+
+					if( user_time == null || user_time <= 0.0 ){
+						setData[index] = "null";
+						continue;
+					}else{		
+						//var round_user_time = Math.round(user_time * 100) / 100;
+						//setData[index] = round_user_time;	
+						setData[index] = user_time;					
+					}
+					//setData[index] = String(newMember.user.id);
+					CheckData[index] = true;
+				}
 			}
 		//}
 
@@ -351,7 +445,6 @@ export class main extends PluginBase  {
 		this.MemberDelete(client, config, Member);
 	}
 
-
 	async interactionCreate(client: Discord.Client, config: Object, interaction: Discord.Interaction){
 		if (!interaction.isCommand()) return;
 		
@@ -360,37 +453,13 @@ export class main extends PluginBase  {
 
 			await interaction.reply("【報告】少々お待ちください。" + channelSend.text_check("_(:3」∠)_") );
 
-			var member_list : Discord.Collection<string, Discord.GuildMember> = new Discord.Collection;
-
 			//console.log( this.tabel_discordDataPoint["discord.Member.role"] );
-
-			await client.guilds.fetch();
-			var guild = client.guilds.cache.map(guild => guild);
-
-			for(var guild_item of guild ){
-				await guild_item.roles.fetch();
-
-				for( var database_Point of this.tabel_discordDataPoint["discord.Member.role"] ){
-					for( var database_role of config["SheetIndex"][ Number(database_Point) ]["roles"]){
-						console.log("role number : " , database_role );
-						var t_item = guild_item.roles.cache.filter(role => role.id == database_role).map(role => role.members);
-						console.log("member data : " , t_item );
-						for( var item of t_item ){
-							member_list = member_list.concat( item );
-						}
-					}
-				}	
-			}
+			var member_list = await this.getMemberList(client, config);
 
 			await interaction.editReply("【報告】現時点での存在する人の処理中" + channelSend.text_check("(;´･ω･)") );
 			
-			// 現時点で存在する人の調査
-			for(var member of member_list.values()){
-				await member.fetch();
-				//console.log("member name : " , member.displayName);
-				await this.MemberDataUp(client, config, null, member);
-			}
-			
+			await this.setSheetData_no1(client, config, member_list);
+
 			await interaction.editReply("【報告】名簿記載メンバーではない人の削除中" + channelSend.text_check("(´；ω；｀)ｳｯ…") );
 
 			// 名簿に存在しているが、名簿記載メンバーではない人の削除
@@ -404,5 +473,43 @@ export class main extends PluginBase  {
 
 		}
 	}
+
+	private async getMemberList(client: Discord.Client, config: Object): Promise< Discord.Collection<string, Discord.GuildMember> >{
+		var member_list : Discord.Collection<string, Discord.GuildMember> = new Discord.Collection;
+
+		await client.guilds.fetch();
+		var guild = client.guilds.cache.map(guild => guild);
+
+		for(var guild_item of guild ){
+			await guild_item.roles.fetch();
+
+			for( var database_Point of this.tabel_discordDataPoint["discord.Member.role"] ){
+				for( var database_role of config["SheetIndex"][ Number(database_Point) ]["roles"]){
+					console.log("role number : " , database_role );
+					var t_item = guild_item.roles.cache.filter(role => role.id == database_role).map(role => role.members);
+					console.log("member data : " , t_item );
+					for( var item of t_item ){
+						member_list = member_list.concat( item );
+					}
+				}
+			}	
+		}
+		return member_list;
+	}
+
+	private async setSheetData_no1(client: Discord.Client , config: Object, member_list: Discord.Collection<string, Discord.GuildMember>){
+		// 一度に調査する場合は、事前にファイルリストを作って置く。
+		var oldlist = await chart.most_oldMonth( config["output_TimeLine_folderpath"] );
+		var filepath_list_oldMonth = oldlist["fileList"];
+		filepath_list_oldMonth.unshift(config["output_TimeLine_filepath"]);
+
+		// 現時点で存在する人の調査
+		for(var member of member_list.values()){
+			await member.fetch();
+			//console.log("member name : " , member.displayName);
+			await this.MemberDataUp(client, config, null, member, filepath_list_oldMonth);
+		}
+	}
+
 
 }
