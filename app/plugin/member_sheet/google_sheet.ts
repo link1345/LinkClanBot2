@@ -45,9 +45,12 @@ export async function getUserPoint(sheet : GoogleSpreadsheetWorksheet, id_point 
 	//console.log( "sheet.columnCount " , sheet.rowCount );
 
 	var null_count = 0;
+	
+	const _sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 	for( var y = 0; y < sheet.rowCount ; y++ ){
 		if(null_count >= 5) break;
 		
+		await _sleep(5);
 		var cell = sheet.getCell(y, id_point);
 
 		//console.log( "id " , oldMember.user.id );
@@ -76,9 +79,12 @@ export async function getUserList(sheet : GoogleSpreadsheetWorksheet, id_point :
 	//console.log( "sheet.columnCount " , sheet.rowCount );
 
 	var null_count = 0;
+
+	const _sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 	for( var y = 0; y < sheet.rowCount ; y++ ){
 		var cell = sheet.getCell(y, id_point);
-		console.log(cell.value);
+		//console.log(cell.value);
+		await _sleep(5);
 		
 		// 5つ空きがあれば…と言う処理を外して置く
 		//if(null_count >= 5) {
@@ -89,7 +95,7 @@ export async function getUserList(sheet : GoogleSpreadsheetWorksheet, id_point :
 			break;
 		}
 		else{
-			var cell = sheet.getCell(y, id_point);
+			//var cell = sheet.getCell(y, id_point);
 			user_list.push(cell.value);
 		}
 	}

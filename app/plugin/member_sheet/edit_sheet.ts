@@ -81,7 +81,11 @@ export async function EditSheet(client: Discord.Client, config: Object, editUser
 			startColumnIndex:0 , endColumnIndex: sheet.columnCount
 		});
 
+		
+		const _sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 		for( var index of indexPoint ){
+			await _sleep(5);
+
 			var cell = sheet.getCell(user_point, index);
 			//console.log("cell1  ==  " , cell.value);
 

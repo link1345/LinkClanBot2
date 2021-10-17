@@ -331,8 +331,11 @@ export class main extends PluginBase  {
 					startRowIndex: user_point,
 					startColumnIndex:0 , endColumnIndex: sheet.columnCount
 				});
+				
+				const _sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 				for(var x = 0; x < CheckData.length; x++){
+					await _sleep(5);
 
 					if( CheckData[x] == true ){
 						var cell = sheet.getCell(user_point, x);
