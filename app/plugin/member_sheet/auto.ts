@@ -51,7 +51,7 @@ export class main extends PluginBase  {
 		//console.log( this.tabel_discordDataPoint );
 
 		
-		cron.schedule('0 0 0 1,15,18 * *', () => this.sheet_periodic_output());
+		cron.schedule('0 0 0 1,18 * *', () => this.sheet_periodic_output());
 	}
 
 
@@ -266,7 +266,7 @@ export class main extends PluginBase  {
 				filepath_list_oldMonth.unshift(config["output_TimeLine_filepath"]);
 			}
 
-			for( var i = 0; i <= 12 && i < filepath_list_oldMonth.length-1 ; i++){
+			for( var i = 0; i <= 12 && i <= filepath_list_oldMonth.length-1 ; i++){
 
 				for( var index of this.tabel_discordDataPoint["discord.time." + i] ){
 
@@ -276,11 +276,10 @@ export class main extends PluginBase  {
 
 					if( user_time == null || user_time <= 0.0 ){
 						setData[index] = "null";
-						continue;
 					}else{		
 						//var round_user_time = Math.round(user_time * 100) / 100;
 						//setData[index] = round_user_time;	
-						setData[index] = user_time;					
+						setData[index] = user_time;		
 					}
 					//setData[index] = String(newMember.user.id);
 					CheckData[index] = true;
