@@ -51,7 +51,7 @@ export class main extends PluginBase  {
 		//console.log( this.tabel_discordDataPoint );
 
 		
-		cron.schedule('0 0 0 1,18 * *', () => this.sheet_periodic_output());
+		cron.schedule('0 1 0 1,10,20,30 * *', () => this.sheet_periodic_output());
 	}
 
 
