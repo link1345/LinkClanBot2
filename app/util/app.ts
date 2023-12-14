@@ -27,25 +27,19 @@ type Plugin = {
 
 export class AppManager {
 	client: Client;
-
 	rest: REST;
-	base_doc: Object;
-	slashCommands: Array<Object>;
-
+	baseConfig: Object;
 	plugins: Array<Plugin>;
 
 	constructor() {
+		this.baseConfig = yaml.load(fs.readFileSync('./config/base.yml', 'utf8'));
 
-		this.base_doc = yaml.load(fs.readFileSync('./config/base.yml', 'utf8'));
+		this.rest = new REST({ version: '9' }).setToken(this.baseConfig["TOKEN"]);
 
-		//this.slashCommands = [];
-		
-		this.rest = new REST({ version: '9' }).setToken(this.base_doc["TOKEN"]);
-
-		this.client = new  Client({ intents: [ 
+		this.client = new  Client({ intents: [
 			Intents.FLAGS.GUILDS,
-			Intents.FLAGS.GUILD_PRESENCES,  
-			Intents.FLAGS.GUILD_MEMBERS, 
+			Intents.FLAGS.GUILD_PRESENCES,
+			Intents.FLAGS.GUILD_MEMBERS,
 			Intents.FLAGS.GUILD_MESSAGES,
 			Intents.FLAGS.GUILD_VOICE_STATES,
 		] });
@@ -70,7 +64,7 @@ export class AppManager {
 				const path = `${__dirname}/../plugin/${pluginFolder}/${item}`;
 
 				const func = require(path)["main"];
-				const obj = new func(this.client, config, this.base_doc, this.rest);
+				const obj = new func(this.client, config, this.baseConfig, this.rest);
 
 				modules.push(obj);
 			}
@@ -95,7 +89,7 @@ export class AppManager {
 		// コマンド初期化
 		if(event === "ready"){
 			await this.rest.put(
-				Routes.applicationGuildCommands(this.base_doc["CLIENT_ID"], this.base_doc["GUILD_ID"]),
+				Routes.applicationGuildCommands(this.baseConfig["CLIENT_ID"], this.baseConfig["GUILD_ID"]),
 				{ body: [] },
 			);
 		}
@@ -133,7 +127,7 @@ export class AppManager {
 			registerEvent(event);
 		}
 
-		this.client.login( this.base_doc["TOKEN"] );
+		this.client.login( this.baseConfig["TOKEN"] );
 	}
 
 	async exit(){
