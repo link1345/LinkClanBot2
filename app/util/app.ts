@@ -40,41 +40,39 @@ export class AppManager {
 		this.plugins = [];
 	}
 
-	async Oneload(path: string){
-		const files = await fs.promises.readdir(path);
+	async pluginLoad(path: string){
+		const config = yaml.load(fs.readFileSync(path, 'utf8'));
 
-		files.forEach(file => {
-			const configPath = `${path}/${file}`;
-			const config = yaml.load(fs.readFileSync(configPath, 'utf8'));
+		// モジュール作業
+		if ( !("module" in config) ) return;
+		if ( !("plugin_folder" in config) ) return;
 
-			// モジュール作業
-			if ( !("module" in config) ) return;
-			if ( !("plugin_folder" in config) ) return;
+		let modules: PluginModule[] = [];
+		for( const item of config.module ) {
+			const pluginFolder = config.plugin_folder;
+			const modulePath = `${__dirname}/../plugin/${pluginFolder}/${item}`;
 
-			let modules: PluginModule[] = [];
-			for( const item of config.module ) {
-				const pluginFolder = config.plugin_folder;
-				const path = `${__dirname}/../plugin/${pluginFolder}/${item}`;
+			const func = require(modulePath)["main"];
+			const obj = new func(this.client, config, this.baseConfig, this.rest);
 
-				const func = require(path)["main"];
-				const obj = new func(this.client, config, this.baseConfig, this.rest);
+			modules.push(obj);
+		}
 
-				modules.push(obj);
-			}
-
-			if( modules.length !== 0 ){
-				this.plugins.push({
-					config_path: configPath,
-					config: config,
-					modules: modules,
-				});
-			}
-		});
+		if( modules.length !== 0 ){
+			this.plugins.push({
+				config_path: path,
+				config: config,
+				modules: modules,
+			});
+		}
 	}
 
 	async load(){
-		var path = __dirname + "/../../config/plugin";
-		await this.Oneload(path);
+		const path = `${__dirname}/../../config/plugin`;
+		const files = await fs.promises.readdir(path);
+		for(const file of files) {
+			await this.pluginLoad(`${path}/${file}`);
+		}
 	}
 
 
