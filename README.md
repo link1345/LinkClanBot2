@@ -16,12 +16,14 @@ Features include :
 # Install
 
 npmのバージョンは、discord.js基準です。
-現在は、**npm 16.6** です。
+現在は、**npm 16.6.2** です。 (package.json参照)
 
+パッケージは以下のコマンドによりインストールできます:
 ```
-npm install -g typescript
-npm install
+npm ci
 ```
+パッケージを変更しアップデートを行った場合は `npm install` が必要になります。
+パッケージの依存関係を正確に保つために `package-lock.json` を更新した場合はコミットするようにしてください。
 
 # Run
 
