@@ -30,5 +30,8 @@
   },
   "devDependencies": {
     "typescript": "^4.4.2"
+  },
+  "engine": {
+    "node": "16.6.2"
   }
 }
