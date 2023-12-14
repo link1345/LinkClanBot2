@@ -1,6 +1,3 @@
-//import { copyFileSync } from "fs";
-//import { eventNames } from "process";
-
 import {REST} from '@discordjs/rest';
 import {Routes} from 'discord-api-types/v9';
 
@@ -11,10 +8,6 @@ import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 
 import {PluginModule, PluginEvents, PluginEventType, ClientEventType, ClientEventList} from './event';
-
-import type {PluginBase} from './plugin_base';
-
-type moduleConstructor = (fix_client: Discord.Client, config: Object, base_doc:Object, rest:REST) => PluginEvents;
 
 // PluginはPluginModuleいくつかで構成される1つの設定から構築されたプラグインプログラムです。
 // configに従って各種 `app/plugin/...` ディレクトリから読み込まれ
