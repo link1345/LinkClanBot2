@@ -4,7 +4,7 @@
 import {REST} from '@discordjs/rest';
 import {Routes} from 'discord-api-types/v9';
 
-//const { Client, Intents, Interaction } = require('discord.js');
+import * as Discord from 'discord.js';
 import {Client, Intents} from 'discord.js';
 
 import * as yaml from 'js-yaml';
@@ -12,15 +12,34 @@ import * as fs from 'fs';
 
 import {EventList} from './event';
 
+import type {PluginBase} from './plugin_base';
+
+type moduleConstructor = (fix_client: Discord.Client, config: Object, base_doc:Object, rest:REST) => PluginBase;
+
+// プラグイン内でイベントを受け取る1つ分のモジュールファイルです
+// そのモジュールを構築するコンストラクタ関数も同時に保持されています。
+type PluginModule = {
+	func: moduleConstructor,
+	obj: PluginBase,
+};
+
+// PluginはPluginModuleいくつかで構成される1つの設定から構築されたプラグインプログラムです。
+// configに従って各種 `app/plugin/...` ディレクトリから読み込まれ
+// AppManagerによって管理されます。
+type Plugin = {
+	config_path: string,
+	config: Object,
+	object: Map<string, PluginModule>,
+};
+
 export class AppManager {
 	client: Client;
 
 	rest: REST;
-
 	base_doc: Object;
 	slashCommands: Array<Object>;
 
-	moduleList: Array<Object>;
+	plugins: Array<Plugin>;
 
 	constructor() {
 
@@ -38,49 +57,45 @@ export class AppManager {
 			Intents.FLAGS.GUILD_VOICE_STATES,
 		] });
 
-		this.moduleList = [];
+		this.plugins = [];
 	}
 
 	async Oneload(path: string){
-
 		const files = await fs.promises.readdir(path);
 
-		var pluginData = {};
-		//console.log(files)
-
 		files.forEach(file => {
-			var pluginItemData = {};
-			pluginItemData["config_path"] = path + "/" + file;
-			pluginItemData["config"] = yaml.load(fs.readFileSync( pluginItemData["config_path"] , 'utf8'));
-			pluginItemData["object"] = {};
-			
+			const configPath = `${path}/${file}`;
+			const config = yaml.load(fs.readFileSync(configPath, 'utf8'));
+
 			// モジュール作業
-			if ( "module" in pluginItemData["config"] && "plugin_folder" in pluginItemData["config"] ) {
-				// hit!
-				for( var item of pluginItemData["config"]["module"] ) {
-					var func_text : string = __dirname + "/../plugin/" + pluginItemData["config"]["plugin_folder"] + "/" + item ;
-					//console.log("func path: " , func_text)
-					pluginItemData["object"][func_text] = {}
-					pluginItemData["object"][func_text]["func"] = require(func_text)["main"];
-					//console.log("func: " , pluginItemData["object"][func_text] );
-					pluginItemData["object"][func_text]["obj"] =  new pluginItemData["object"][func_text]["func"](this.client, pluginItemData["config"], this.base_doc, this.rest) ;
+			if ( !("module" in config) ) return;
+			if ( !("plugin_folder" in config) ) return;
 
-				}
+			let object: Map<string, PluginModule> = new Map();
+			for( var item of config.module ) {
+				let mod = {};
+				const pluginFolder = config.plugin_folder;
+				const path = `${__dirname}/../plugin/${pluginFolder}/${item}`;
+
+				const func = require(path)["main"];
+				const obj = new func(this.client, config, this.base_doc, this.rest);
+
+				object[path] = { func, obj };
 			}
 
-			if( Object.keys(pluginItemData["object"]).length != 0 ){
-				this.moduleList.push( pluginItemData );
+			if( object.size !== 0 ){
+				this.plugins.push({
+					config_path: configPath,
+					config: config,
+					object: object,
+				});
 			}
-
 		});
-		
-		//console.log(this.moduleList)
 	}
 
 	async load(){
 		var path = __dirname + "/../../config/plugin";
 		await this.Oneload(path);
-		//console.log( "load : ", this.moduleList );
 	}
 
 
@@ -95,7 +110,6 @@ export class AppManager {
 		}
 		
 		for(let item of module){
-			
 			for( let obj_key of Object.keys( item["object"] ) ){
 
 				//console.log( "Event:" ,  eventName , ", Name:" , obj_key);
@@ -118,15 +132,12 @@ export class AppManager {
 	}
 
 	run(){
-
-		// ------------------------------------------------------------------------------
-		// -----  EVENT  ----------------------------------------------------------------
-		// ---------- https://discord.js.org/#/docs/main/stable/class/Client ------------
-		// ------------------------------------------------------------------------------
+		// Eventの定義
+		// refer: https://discord.js.org/#/docs/main/stable/class/Client
 
 		const eventRun = async<T extends readonly any[]>( eventName:string, data:[...T]) => {
 			const _e = async<T extends readonly any[]> (...data:[...T]) => {
-				await this.run_func( eventName, this.moduleList , this.client , data);
+				await this.run_func( eventName, this.plugins , this.client , data);
 			}
 			this.client.on(eventName, _e );
 		}
@@ -159,7 +170,7 @@ export class AppManager {
 
 	async exit(){
 		// 各プラグインで、終了処理を行うように指令を出す。
-		await this.run_func( "exit", this.moduleList , this.client , []); 
+		await this.run_func( "exit", this.plugins , this.client , []); 
 		// Botログアウト
 		this.client.destroy();
 		

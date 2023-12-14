@@ -1,12 +1,8 @@
-// ------------------------------------------------------------------------------
-// -----  EVENT  ----------------------------------------------------------------
-// ---------- https://discord.js.org/#/docs/main/stable/class/Client ------------
-//   ※　わざわざ変数の型が書かれているけど、ぶっちゃけ、特に意味ないです。
-//       必要なのは、変数の個数。
-// ------------------------------------------------------------------------------
-
-export const EventList = 
-{
+// EventList とは、DiscordのEventとそれに対応した引数をリストアップしたオブジェクトです。
+// https://discord.js.org/#/docs/main/stable/class/Client
+// ※わざわざ変数の型が書かれているけど、ぶっちゃけ、特に意味ないです。
+// 必要なのは、変数の個数。
+export const EventList = {
 	"applicationCommandCreate": [ "ApplicationCommand" ],
 	"applicationCommandDelete": [ "ApplicationCommand" ],
 	"applicationCommandUpdate": [ "ApplicationCommand", "ApplicationCommand" ],
