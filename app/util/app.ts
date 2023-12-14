@@ -1,115 +1,102 @@
-//import { copyFileSync } from "fs";
-//import { eventNames } from "process";
-
 import {REST} from '@discordjs/rest';
 import {Routes} from 'discord-api-types/v9';
 
-//const { Client, Intents, Interaction } = require('discord.js');
+import * as Discord from 'discord.js';
 import {Client, Intents} from 'discord.js';
 
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 
-import {EventList} from './event';
+import {PluginModule, PluginEvents, PluginEventType, ClientEventType, ClientEventList} from './event';
+
+// PluginはPluginModuleいくつかで構成される1つの設定から構築されたプラグインプログラムです。
+// configに従って各種 `app/plugin/...` ディレクトリから読み込まれ
+// AppManagerによって管理されます。
+type Plugin = {
+	config_path: string,
+	config: Object,
+	modules: PluginModule[],
+};
 
 export class AppManager {
 	client: Client;
-
 	rest: REST;
-
-	base_doc: Object;
-	slashCommands: Array<Object>;
-
-	moduleList: Array<Object>;
+	baseConfig: Object;
+	plugins: Array<Plugin>;
 
 	constructor() {
+		this.baseConfig = yaml.load(fs.readFileSync('./config/base.yml', 'utf8'));
 
-		this.base_doc = yaml.load(fs.readFileSync('./config/base.yml', 'utf8'));
+		this.rest = new REST({ version: '9' }).setToken(this.baseConfig["TOKEN"]);
 
-		//this.slashCommands = [];
-		
-		this.rest = new REST({ version: '9' }).setToken(this.base_doc["TOKEN"]);
-
-		this.client = new  Client({ intents: [ 
+		this.client = new  Client({ intents: [
 			Intents.FLAGS.GUILDS,
-			Intents.FLAGS.GUILD_PRESENCES,  
-			Intents.FLAGS.GUILD_MEMBERS, 
+			Intents.FLAGS.GUILD_PRESENCES,
+			Intents.FLAGS.GUILD_MEMBERS,
 			Intents.FLAGS.GUILD_MESSAGES,
 			Intents.FLAGS.GUILD_VOICE_STATES,
 		] });
 
-		this.moduleList = [];
+		this.plugins = [];
 	}
 
-	async Oneload(path: string){
+	async pluginLoad(path: string){
+		const config = yaml.load(fs.readFileSync(path, 'utf8'));
 
-		const files = await fs.promises.readdir(path);
+		// モジュール作業
+		if ( !("module" in config) ) return;
+		if ( !("plugin_folder" in config) ) return;
 
-		var pluginData = {};
-		//console.log(files)
+		let modules: PluginModule[] = [];
+		for( const item of config.module ) {
+			const pluginFolder = config.plugin_folder;
+			const modulePath = `${__dirname}/../plugin/${pluginFolder}/${item}`;
 
-		files.forEach(file => {
-			var pluginItemData = {};
-			pluginItemData["config_path"] = path + "/" + file;
-			pluginItemData["config"] = yaml.load(fs.readFileSync( pluginItemData["config_path"] , 'utf8'));
-			pluginItemData["object"] = {};
-			
-			// モジュール作業
-			if ( "module" in pluginItemData["config"] && "plugin_folder" in pluginItemData["config"] ) {
-				// hit!
-				for( var item of pluginItemData["config"]["module"] ) {
-					var func_text : string = __dirname + "/../plugin/" + pluginItemData["config"]["plugin_folder"] + "/" + item ;
-					//console.log("func path: " , func_text)
-					pluginItemData["object"][func_text] = {}
-					pluginItemData["object"][func_text]["func"] = require(func_text)["main"];
-					//console.log("func: " , pluginItemData["object"][func_text] );
-					pluginItemData["object"][func_text]["obj"] =  new pluginItemData["object"][func_text]["func"](this.client, pluginItemData["config"], this.base_doc, this.rest) ;
+			const func = require(modulePath)["main"];
+			const obj = new func(this.client, config, this.baseConfig, this.rest);
 
-				}
-			}
+			modules.push(obj);
+		}
 
-			if( Object.keys(pluginItemData["object"]).length != 0 ){
-				this.moduleList.push( pluginItemData );
-			}
-
-		});
-		
-		//console.log(this.moduleList)
+		if( modules.length !== 0 ){
+			this.plugins.push({
+				config_path: path,
+				config: config,
+				modules: modules,
+			});
+		}
 	}
 
 	async load(){
-		var path = __dirname + "/../../config/plugin";
-		await this.Oneload(path);
-		//console.log( "load : ", this.moduleList );
+		const path = `${__dirname}/../../config/plugin`;
+		const files = await fs.promises.readdir(path);
+		for(const file of files) {
+			await this.pluginLoad(`${path}/${file}`);
+		}
 	}
 
 
-	run_func = async<T extends readonly any[]>( eventName:string, module: Object[], client: Client, data:[...T] ) => {
-		
+	async run_func<K extends PluginEventType>(event: K, client: Client, ...args: PluginEvents[K]): Promise<void> {
 		// コマンド初期化
-		if(eventName === "ready"){
+		if(event === "ready"){
 			await this.rest.put(
-				Routes.applicationGuildCommands(this.base_doc["CLIENT_ID"], this.base_doc["GUILD_ID"]),
+				Routes.applicationGuildCommands(this.baseConfig["CLIENT_ID"], this.baseConfig["GUILD_ID"]),
 				{ body: [] },
 			);
 		}
-		
-		for(let item of module){
-			
-			for( let obj_key of Object.keys( item["object"] ) ){
 
-				//console.log( "Event:" ,  eventName , ", Name:" , obj_key);
-				if( item["object"][obj_key]["obj"][eventName] == null ) continue;
+		for(const plugin of this.plugins) {
+			for( const mod of plugin.modules ){
+				const config = plugin.config;
+				const handler = mod[event];
+				if( handler == null ) continue;
+
 				try {
-					//console.log("start!  obj_key " , obj_key , "   eventName " , eventName, "   : " , item["object"][obj_key]["obj"][eventName] );
-					( await item["object"][obj_key]["obj"][eventName](client, item["config"], ...data) );				
-					//console.log("end!  obj_key " , obj_key , "   eventName " , eventName);
-				
-				}catch(error) {
+					await handler(client, config, ...args);
+				} catch (error) {
 					if (error instanceof TypeError){
 						// 関数がない場合の処理
-						//console.log( "TypeError  Event:" ,  eventName , ", Name:" , obj_key);
-					}else{				
+					}else{
 						console.log(error);
 					}
 				}
@@ -118,51 +105,28 @@ export class AppManager {
 	}
 
 	run(){
-
-		// ------------------------------------------------------------------------------
-		// -----  EVENT  ----------------------------------------------------------------
-		// ---------- https://discord.js.org/#/docs/main/stable/class/Client ------------
-		// ------------------------------------------------------------------------------
-
-		const eventRun = async<T extends readonly any[]>( eventName:string, data:[...T]) => {
-			const _e = async<T extends readonly any[]> (...data:[...T]) => {
-				await this.run_func( eventName, this.moduleList , this.client , data);
+		// Eventの定義
+		// refer: https://discord.js.org/#/docs/main/stable/class/Client
+		const registerEvent = async<K extends ClientEventType>(event: K) => {
+			const handler = async(...data: PluginEvents[K]) => {
+				await this.run_func(event, this.client, ...data);
 			}
-			this.client.on(eventName, _e );
+			this.client.on(event, handler);
 		}
-		
-		//console.log( EventList ) ;
-		
-		for( let obj_key of Object.keys( EventList ) ){
-			var eventitem = [];
-			for( let item in EventList[obj_key] ){
-				if( item == "Date" ){
-					eventitem.push( Date );
-	
-				}else if( item == "string" ){
-					eventitem.push( NaN );
-	
-				}else if( item == "any" ){
-					eventitem.push( NaN );
-	
-				}else{
-					eventitem.push( require('discord.js')[EventList[obj_key][item]] );
-					//console.log( EventList[obj_key] );
-				}	
-			}
-			//console.log(obj_key , " => " , eventitem );
-			eventRun(obj_key ,  eventitem );
+
+		for( const event of ClientEventList ) {
+			registerEvent(event);
 		}
-		
-		this.client.login( this.base_doc["TOKEN"] );
+
+		this.client.login( this.baseConfig["TOKEN"] );
 	}
 
 	async exit(){
 		// 各プラグインで、終了処理を行うように指令を出す。
-		await this.run_func( "exit", this.moduleList , this.client , []); 
+		await this.run_func("exit", this.client);
 		// Botログアウト
 		this.client.destroy();
-		
+
 		console.log(" ---------- ボット終了するぜー！ ----------");
 		process.exit(0);
 	}

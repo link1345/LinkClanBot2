@@ -1,74 +1,122 @@
-// ------------------------------------------------------------------------------
-// -----  EVENT  ----------------------------------------------------------------
-// ---------- https://discord.js.org/#/docs/main/stable/class/Client ------------
-//   ※　わざわざ変数の型が書かれているけど、ぶっちゃけ、特に意味ないです。
-//       必要なのは、変数の個数。
-// ------------------------------------------------------------------------------
+// EventList とは、DiscordのEventとそれに対応した引数をリストアップしたオブジェクトです。
+// https://discord.js.org/#/docs/main/stable/class/Client
+// ※わざわざ変数の型が書かれているけど、ぶっちゃけ、特に意味ないです。
+// 必要なのは、変数の個数。
 
-export const EventList = 
+import { Client, ClientEvents } from 'discord.js';
+
+export interface ExtendedEvents {
+	exit: [],
+}
+
+export type PluginEvents = ClientEvents & ExtendedEvents;
+export type ClientEventType = keyof ClientEvents;
+export type ExtendedEventType = keyof ExtendedEvents;
+export type PluginEventType = keyof PluginEvents;
+
+export type PluginModule = {
+	readonly [K in PluginEventType]?: (client: Client, config: Object, ...data: PluginEvents[K]) => Promise<void>;
+}
+
+export const ClientEventList = [
+	"applicationCommandCreate",
+	"applicationCommandDelete",
+	"applicationCommandUpdate",
+	"channelCreate",
+	"channelDelete",
+	"channelPinsUpdate",
+	"channelUpdate",
+	"debug",
+	"emojiCreate",
+	"emojiDelete",
+	"emojiUpdate",
+	"error",
+	"guildBanAdd",
+	"guildBanRemove",
+	"guildCreate",
+	"guildDelete",
+	"guildIntegrationsUpdate",
+	"guildMemberAdd",
+	"guildMemberAvailable",
+	"guildMemberRemove",
+	"guildMembersChunk",
+	"guildMemberUpdate",
+	"guildUnavailable",
+	"guildUpdate",
+	"interactionCreate",
+	"invalidRequestWarning",
+	"inviteCreate",
+	"inviteDelete",
+	"messageCreate",
+	"messageDelete",
+	"messageDeleteBulk",
+	"messageReactionAdd",
+	"messageReactionRemove",
+	"messageReactionRemoveAll",
+	"messageReactionRemoveEmoji",
+	"messageUpdate",
+	"presenceUpdate",
+	"rateLimit",
+	"ready",
+	"roleCreate",
+	"roleDelete",
+	"roleUpdate",
+	"shardDisconnect",
+	"shardError",
+	"shardReady",
+	"shardReconnecting",
+	"shardResume",
+	"stageInstanceCreate",
+	"stageInstanceDelete",
+	"stageInstanceUpdate",
+	"stickerCreate",
+	"stickerDelete",
+	"stickerUpdate",
+	"threadCreate",
+	"threadDelete",
+	"threadListSync",
+	"threadMembersUpdate",
+	"threadMemberUpdate",
+	"threadUpdate",
+	"typingStart",
+	"userUpdate",
+	"voiceStateUpdate",
+	"warn",
+	"webhookUpdate",
+	// 以下の3イベントは定義されていなかったけれど
+	// おそらく必要(かつ登録しても問題なさそう)なので追加した
+	"message",
+	"invalidated",
+	"interaction",
+] as const;
+
+export const ExtendedEventList = [
+	"exit",
+] as const;
+
+export const PluginEventList = [
+	...ClientEventList,
+	...ExtendedEventList,
+] as const;
+
+
+interface CheckMissing<T extends readonly unknown[], Keys extends T[number]>{ }
+interface CheckExcess<T extends readonly Keys[], Keys>{}
+
+// Checking for PluginEvents
 {
-	"applicationCommandCreate": [ "ApplicationCommand" ],
-	"applicationCommandDelete": [ "ApplicationCommand" ],
-	"applicationCommandUpdate": [ "ApplicationCommand", "ApplicationCommand" ],
-	"channelCreate": [ "GuildChannel" ],
-	"channelDelete": [ "any" ],
-	"channelPinsUpdate": [ "TextBasedChannels", "Date" ],
-	"channelUpdate": [ "any", "any" ],
-	"debug": [ "string" ],
-	"emojiCreate": [ "GuildEmoji" ],
-	"emojiDelete": [ "GuildEmoji" ],
-	"emojiUpdate": [ "GuildEmoji","GuildEmoji" ],
-	"error": [ "any" ],
-	"guildBanAdd": [ "GuildBan" ],
-	"guildBanRemove": [ "GuildBan" ],
-	"guildCreate": [ "Guild" ],
-	"guildDelete": [ "Guild" ],
-	"guildIntegrationsUpdate": [ "Guild" ],
-	"guildMemberAdd": [ "GuildMember" ],
-	"guildMemberAvailable": [ "GuildMember" ],
-	"guildMemberRemove": [ "GuildMember" ],
-	"guildMembersChunk": [ "any" , "Guild", "GuildMembersChunk" ],
-	"guildMemberUpdate": [ "any", "any" ],
-	"guildUnavailable": [ "Guild" ],
-	"guildUpdate": [ "Guild", "Guild" ],
-	"interactionCreate": ["any"],
-	"invalidRequestWarning": [ "InvalidRequestWarningData" ],
-	"inviteCreate": [ "Invite" ],
-	"inviteDelete": [ "Invite" ],
-	"messageCreate": [ "Message" ],
-	"messageDelete": [ "Message" ],
-	"messageDeleteBulk": [ "any" ],
-	"messageReactionAdd": [ "MessageReaction", "User" ],
-	"messageReactionRemove": [ "MessageReaction", "User" ],
-	"messageReactionRemoveAll": [ "Message" ],
-	"messageReactionRemoveEmoji": [ "MessageReaction" ],
-	"messageUpdate": [ "Message","Message" ],
-	"presenceUpdate": [ "Presence", "Presence" ],
-	"rateLimit": [ "RateLimitData" ],
-	"ready": ["Client"],
-	"roleCreate": [ "Role" ],
-	"roleDelete": [ "Role" ],
-	"roleUpdate": [ "Role","Role" ],
-	"shardDisconnect": [ "any", "any" ],
-	"shardError": [ "any", "any" ],
-	"shardReady": [ "any", "any" ],
-	"shardReconnecting": [ "any" ],
-	"shardResume": [ "any", "any" ],
-	"stageInstanceCreate": [ "StageInstance" ],
-	"stageInstanceDelete": [ "StageInstance" ],
-	"stageInstanceUpdate": [ "StageInstance", "StageInstance" ],
-	"stickerCreate": [ "Sticker" ],
-	"stickerDelete": [ "Sticker" ],
-	"stickerUpdate": [ "Sticker", "Sticker" ],
-	"threadCreate": [ "ThreadChannel" ],
-	"threadDelete": [ "ThreadChannel" ],
-	"threadListSync": [ "any" ],
-	"threadMembersUpdate": [ "any", "any" ],
-	"threadMemberUpdate": [ "ThreadMember", "ThreadMember" ],
-	"threadUpdate": [ "ThreadChannel", "ThreadChannel" ],
-	"typingStart": [ "Typing" ],
-	"userUpdate": [ "User", "User" ],
-	"voiceStateUpdate": [ "VoiceState", "VoiceState" ],
-	"warn": [ "any" ],
-	"webhookUpdate": [ "TextChannel" ],
+	type _CheckMissing = CheckMissing<typeof ClientEventList, ClientEventType>;
+	type _CheckExcess = CheckExcess<typeof ClientEventList, ClientEventType>;
+}
+
+// Checking for PluginEvents
+{
+	type _CheckMissing = CheckMissing<typeof ExtendedEventList, ExtendedEventType>;
+	type _CheckExcess = CheckExcess<typeof ExtendedEventList, ExtendedEventType>;
+}
+
+// Checking for PluginEvents
+{
+	type _CheckMissing = CheckMissing<typeof PluginEventList, PluginEventType>;
+	type _CheckExcess = CheckExcess<typeof PluginEventList, PluginEventType>;
 }
