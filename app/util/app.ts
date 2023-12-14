@@ -10,18 +10,11 @@ import {Client, Intents} from 'discord.js';
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 
-import {EventList} from './event';
+import {PluginModule, PluginEvents, PluginEventType, ClientEventType, ClientEventList} from './event';
 
 import type {PluginBase} from './plugin_base';
 
-type moduleConstructor = (fix_client: Discord.Client, config: Object, base_doc:Object, rest:REST) => PluginBase;
-
-// プラグイン内でイベントを受け取る1つ分のモジュールファイルです
-// そのモジュールを構築するコンストラクタ関数も同時に保持されています。
-type PluginModule = {
-	func: moduleConstructor,
-	obj: PluginBase,
-};
+type moduleConstructor = (fix_client: Discord.Client, config: Object, base_doc:Object, rest:REST) => PluginEvents;
 
 // PluginはPluginModuleいくつかで構成される1つの設定から構築されたプラグインプログラムです。
 // configに従って各種 `app/plugin/...` ディレクトリから読み込まれ
@@ -29,7 +22,7 @@ type PluginModule = {
 type Plugin = {
 	config_path: string,
 	config: Object,
-	object: Map<string, PluginModule>,
+	modules: PluginModule[],
 };
 
 export class AppManager {
@@ -71,23 +64,22 @@ export class AppManager {
 			if ( !("module" in config) ) return;
 			if ( !("plugin_folder" in config) ) return;
 
-			let object: Map<string, PluginModule> = new Map();
-			for( var item of config.module ) {
-				let mod = {};
+			let modules: PluginModule[] = [];
+			for( const item of config.module ) {
 				const pluginFolder = config.plugin_folder;
 				const path = `${__dirname}/../plugin/${pluginFolder}/${item}`;
 
 				const func = require(path)["main"];
 				const obj = new func(this.client, config, this.base_doc, this.rest);
 
-				object[path] = { func, obj };
+				modules.push(obj);
 			}
 
-			if( object.size !== 0 ){
+			if( modules.length !== 0 ){
 				this.plugins.push({
 					config_path: configPath,
 					config: config,
-					object: object,
+					modules: modules,
 				});
 			}
 		});
@@ -99,31 +91,27 @@ export class AppManager {
 	}
 
 
-	run_func = async<T extends readonly any[]>( eventName:string, module: Object[], client: Client, data:[...T] ) => {
-		
+	async run_func<K extends PluginEventType>(event: K, client: Client, ...args: PluginEvents[K]): Promise<void> {
 		// コマンド初期化
-		if(eventName === "ready"){
+		if(event === "ready"){
 			await this.rest.put(
 				Routes.applicationGuildCommands(this.base_doc["CLIENT_ID"], this.base_doc["GUILD_ID"]),
 				{ body: [] },
 			);
 		}
-		
-		for(let item of module){
-			for( let obj_key of Object.keys( item["object"] ) ){
 
-				//console.log( "Event:" ,  eventName , ", Name:" , obj_key);
-				if( item["object"][obj_key]["obj"][eventName] == null ) continue;
+		for(const plugin of this.plugins) {
+			for( const mod of plugin.modules ){
+				const config = plugin.config;
+				const handler = mod[event];
+				if( handler == null ) continue;
+
 				try {
-					//console.log("start!  obj_key " , obj_key , "   eventName " , eventName, "   : " , item["object"][obj_key]["obj"][eventName] );
-					( await item["object"][obj_key]["obj"][eventName](client, item["config"], ...data) );				
-					//console.log("end!  obj_key " , obj_key , "   eventName " , eventName);
-				
-				}catch(error) {
+					await handler(client, config, ...args);
+				} catch (error) {
 					if (error instanceof TypeError){
 						// 関数がない場合の処理
-						//console.log( "TypeError  Event:" ,  eventName , ", Name:" , obj_key);
-					}else{				
+					}else{
 						console.log(error);
 					}
 				}
@@ -134,46 +122,26 @@ export class AppManager {
 	run(){
 		// Eventの定義
 		// refer: https://discord.js.org/#/docs/main/stable/class/Client
+		const registerEvent = async<K extends ClientEventType>(event: K) => {
+			const handler = async(...data: PluginEvents[K]) => {
+				await this.run_func(event, this.client, ...data);
+			}
+			this.client.on(event, handler);
+		}
 
-		const eventRun = async<T extends readonly any[]>( eventName:string, data:[...T]) => {
-			const _e = async<T extends readonly any[]> (...data:[...T]) => {
-				await this.run_func( eventName, this.plugins , this.client , data);
-			}
-			this.client.on(eventName, _e );
+		for( const event of ClientEventList ) {
+			registerEvent(event);
 		}
-		
-		//console.log( EventList ) ;
-		
-		for( let obj_key of Object.keys( EventList ) ){
-			var eventitem = [];
-			for( let item in EventList[obj_key] ){
-				if( item == "Date" ){
-					eventitem.push( Date );
-	
-				}else if( item == "string" ){
-					eventitem.push( NaN );
-	
-				}else if( item == "any" ){
-					eventitem.push( NaN );
-	
-				}else{
-					eventitem.push( require('discord.js')[EventList[obj_key][item]] );
-					//console.log( EventList[obj_key] );
-				}	
-			}
-			//console.log(obj_key , " => " , eventitem );
-			eventRun(obj_key ,  eventitem );
-		}
-		
+
 		this.client.login( this.base_doc["TOKEN"] );
 	}
 
 	async exit(){
 		// 各プラグインで、終了処理を行うように指令を出す。
-		await this.run_func( "exit", this.plugins , this.client , []); 
+		await this.run_func("exit", this.client);
 		// Botログアウト
 		this.client.destroy();
-		
+
 		console.log(" ---------- ボット終了するぜー！ ----------");
 		process.exit(0);
 	}
